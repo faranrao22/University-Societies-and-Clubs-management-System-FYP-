@@ -3,6 +3,7 @@ let bcrypt = require("bcrypt")
 let jwt = require("jsonwebtoken");
 const users = require("../models/users");
 const { notifyAllAdmins } = require("../utils/notifyUser");
+const isProd = process.env.NODE_ENV === "production";
 
 const signup = async (req, res) => {
   try {
@@ -128,8 +129,8 @@ const login = async (req, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,       // must be false on localhost
-    sameSite: "lax",     // BEST for localhost
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",           // ensure all routes get it
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
@@ -144,8 +145,8 @@ const logout = (req, res) => {
   // Clear the cookie containing the token
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
   });
 

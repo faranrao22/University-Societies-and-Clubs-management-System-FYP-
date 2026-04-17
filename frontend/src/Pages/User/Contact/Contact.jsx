@@ -1,5 +1,8 @@
 import React, { useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import API_BASE_URL from "../../../config/api.config";
 import { 
   Mail, 
   Phone, 
@@ -9,146 +12,299 @@ import {
   Clock,
   Instagram,
   Twitter,
-  Linkedin
+  Linkedin,
+  CheckCircle2
 } from "lucide-react";
+
+// 🔹 Sober Color Tokens
+const COLORS = {
+  primary: "#1e3a8a",
+  primaryHover: "#1d4ed8",
+  accent: "#38bdf8",
+  bg: "#e2e8f0",
+  surface: "#FFFFFF",
+  text: "#111827",
+  textMuted: "#4B5563",
+  border: "rgba(30, 64, 175, 0.2)",
+  borderLight: "rgba(30, 64, 175, 0.1)",
+};
 
 const Contact = () => {
   const [formState, setFormState] = useState({ name: "", email: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await axios.post(
+        `${API_BASE_URL}/contact/messages`,
+        {
+          name: formState.name.trim(),
+          email: formState.email.trim(),
+          message: formState.message.trim(),
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      setSubmitted(true);
+      setFormState({ name: "", email: "", message: "" });
+      toast.success("Message sent. We will get back to you soon.");
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Could not send your message. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const contactMethods = [
     {
-      icon: <Mail className="text-indigo-600" />,
-      title: "Email Us",
-      value: "hello@university.edu",
-      desc: "Our team responds within 24 hours."
+      icon: <Mail size={20} />,
+      title: "Email",
+      value: "hello@uscms.edu",
+      desc: "We respond within 24 hours on business days."
     },
     {
-      icon: <Phone className="text-purple-600" />,
-      title: "Call Us",
+      icon: <Phone size={20} />,
+      title: "Phone",
       value: "+1 (555) 000-1234",
-      desc: "Mon-Fri from 9am to 5pm."
+      desc: "Monday to Friday, 9:00 AM – 5:00 PM."
     },
     {
-      icon: <MapPin className="text-pink-600" />,
+      icon: <MapPin size={20} />,
       title: "Office",
       value: "Student Union, Plaza 4",
-      desc: "Come say hi at our HQ."
+      desc: "Visit us during regular campus hours."
     }
   ];
 
   return (
-    <div className="bg-[#fcfcfd] min-h-screen">
-      {/* --- HERO SECTION --- */}
-      <section className="relative pt-32 pb-64 bg-[#0a0118] overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] -mr-40 -mt-40" />
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center md:text-left max-w-3xl"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-indigo-300 text-xs font-black uppercase tracking-[0.2em] mb-6">
-              <MessageSquare size={14} /> Get In Touch
+    <div className="min-h-screen" style={{ backgroundColor: COLORS.bg }}>
+      
+      {/* 🔹 Page Header - Clean & Purposeful */}
+      <header className="py-12 px-6 border-b" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.borderLight }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-4" style={{ backgroundColor: "rgba(27, 77, 40, 0.08)" }}>
+            <MessageSquare size={14} style={{ color: COLORS.accent }} />
+            <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: COLORS.primary }}>
+              Contact Us
             </span>
-            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter">
-              Let's Start a <br />
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-indigo-400">
-                Conversation.
-              </span>
-            </h1>
-            <p className="text-gray-400 text-lg md:text-xl leading-relaxed">
-              Have questions about a society or want to start your own? Our team is here to help you navigate your student journey.
-            </p>
-          </motion.div>
+          </div>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: COLORS.text }}>
+            Get in Touch
+          </h1>
+          <p className="text-sm max-w-2xl" style={{ color: COLORS.textMuted }}>
+            Have questions about a society or want to start your own? Our team is here to help you navigate your student journey.
+          </p>
         </div>
-      </section>
+      </header>
 
-      {/* --- MAIN INTERACTION AREA --- */}
-      <section className="max-w-7xl mx-auto px-6 -mt-40 relative z-20 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      {/* 🔹 Main Content - Two Column Layout */}
+      <section className="max-w-6xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Left: Contact Form Card */}
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-7 bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-indigo-900/10 border border-gray-50"
-          >
-            <h2 className="text-3xl font-black text-gray-900 mb-8">Send us a message</h2>
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Full Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="John Doe"
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                  />
+          {/* LEFT: Contact Form */}
+          <div className="lg:col-span-7">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-xl border p-6 md:p-8"
+              style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+            >
+              <h2 className="text-xl font-semibold mb-6" style={{ color: COLORS.text }}>
+                Send us a message
+              </h2>
+              
+              {submitted ? (
+                <div 
+                  className="p-6 rounded-lg text-center"
+                  style={{ backgroundColor: "rgba(27, 77, 40, 0.08)", borderColor: COLORS.border }}
+                >
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: COLORS.primary }} />
+                  <p className="font-medium mb-1" style={{ color: COLORS.text }}>Message sent successfully</p>
+                  <p className="text-sm" style={{ color: COLORS.textMuted }}>We'll get back to you within 24 hours.</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="john@example.com"
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Your Message</label>
-                <textarea 
-                  rows="5"
-                  placeholder="Tell us how we can help..."
-                  className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none"
-                ></textarea>
-              </div>
-              <button className="w-full md:w-auto px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-200 group">
-                Send Message <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              </button>
-            </form>
-          </motion.div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium" style={{ color: COLORS.textMuted }}>
+                        Full Name <span style={{ color: "#DC2626" }}>*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="John Doe"
+                        value={formState.name}
+                        onChange={(e) => setFormState({...formState, name: e.target.value})}
+                        className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-colors"
+                        style={{ 
+                          backgroundColor: COLORS.bg,
+                          border: `1px solid ${COLORS.border}`,
+                          color: COLORS.text
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = COLORS.primary}
+                        onBlur={(e) => e.target.style.borderColor = COLORS.border}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium" style={{ color: COLORS.textMuted }}>
+                        Email Address <span style={{ color: "#DC2626" }}>*</span>
+                      </label>
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="john@example.com"
+                        value={formState.email}
+                        onChange={(e) => setFormState({...formState, email: e.target.value})}
+                        className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-colors"
+                        style={{ 
+                          backgroundColor: COLORS.bg,
+                          border: `1px solid ${COLORS.border}`,
+                          color: COLORS.text
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = COLORS.primary}
+                        onBlur={(e) => e.target.style.borderColor = COLORS.border}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium" style={{ color: COLORS.textMuted }}>
+                      Your Message <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <textarea 
+                      rows={5}
+                      required
+                      minLength={10}
+                      maxLength={8000}
+                      placeholder="Tell us how we can help..."
+                      value={formState.message}
+                      onChange={(e) => setFormState({...formState, message: e.target.value})}
+                      className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-colors resize-none"
+                      style={{ 
+                        backgroundColor: COLORS.bg,
+                        border: `1px solid ${COLORS.border}`,
+                        color: COLORS.text
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = COLORS.primary}
+                      onBlur={(e) => e.target.style.borderColor = COLORS.border}
+                    />
+                  </div>
+                  
+                  <button 
+                    type="submit"
+                    disabled={sending}
+                    className="w-full md:w-auto px-8 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: COLORS.primary, color: "#fff" }}
+                  >
+                    {sending ? "Sending…" : "Send Message"} 
+                    {!sending && <Send size={14} />}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
 
-          {/* Right: Contact Details & Socials */}
-          <div className="lg:col-span-5 space-y-8">
+          {/* RIGHT: Contact Details & Socials */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Contact Methods */}
             {contactMethods.map((method, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, x: 30 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-white p-6 rounded-4xl border border-gray-100 shadow-xl shadow-indigo-900/5 flex gap-6 group hover:border-indigo-100 transition-all"
+                transition={{ delay: idx * 0.1, duration: 0.3 }}
+                className="p-5 rounded-xl border flex gap-4"
+                style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
               >
-                <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  {method.icon}
+                <div 
+                  className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "rgba(27, 77, 40, 0.08)" }}
+                >
+                  <span style={{ color: COLORS.primary }}>{method.icon}</span>
                 </div>
                 <div>
-                  <h4 className="font-black text-gray-900 text-lg mb-1">{method.title}</h4>
-                  <p className="text-indigo-600 font-bold mb-1">{method.value}</p>
-                  <p className="text-gray-400 text-sm">{method.desc}</p>
+                  <h4 className="font-semibold text-sm mb-0.5" style={{ color: COLORS.text }}>
+                    {method.title}
+                  </h4>
+                  <p className="font-medium text-sm mb-1" style={{ color: COLORS.primary }}>
+                    {method.value}
+                  </p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                    {method.desc}
+                  </p>
                 </div>
               </motion.div>
             ))}
 
-            {/* Social Connect Card */}
+            {/* Office Hours Card */}
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="p-5 rounded-xl border"
+              style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <Clock size={18} style={{ color: COLORS.accent }} />
+                <h4 className="font-semibold text-sm" style={{ color: COLORS.text }}>Office Hours</h4>
+              </div>
+              <ul className="space-y-2 text-xs" style={{ color: COLORS.textMuted }}>
+                <li className="flex justify-between">
+                  <span>Monday – Friday</span>
+                  <span className="font-medium" style={{ color: COLORS.text }}>9:00 AM – 5:00 PM</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Saturday</span>
+                  <span className="font-medium" style={{ color: COLORS.text }}>10:00 AM – 2:00 PM</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Sunday</span>
+                  <span>Closed</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* Social Connect Card - Sober Version */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-linear-to-br from-indigo-600 to-purple-700 p-8 rounded-[2.5rem] text-white overflow-hidden relative"
+              className="p-6 rounded-xl border"
+              style={{ 
+                backgroundColor: COLORS.primary, 
+                borderColor: "rgba(27, 77, 40, 0.3)",
+                color: "#fff"
+              }}
             >
-              <div className="relative z-10">
-                <h4 className="text-2xl font-black mb-4">Follow the vibe</h4>
-                <p className="text-indigo-100/80 mb-6 text-sm">Stay updated with the latest society events and campus news.</p>
-                <div className="flex gap-4">
-                  {[<Instagram />, <Twitter />, <Linkedin />].map((icon, i) => (
-                    <button key={i} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all backdrop-blur-md">
-                      {icon}
-                    </button>
-                  ))}
-                </div>
+              <h4 className="font-semibold mb-3">Follow Us</h4>
+              <p className="text-sm mb-4 opacity-90">
+                Stay updated with the latest society events and campus news.
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { icon: <Instagram size={16} />, label: "Instagram" },
+                  { icon: <Twitter size={16} />, label: "Twitter" },
+                  { icon: <Linkedin size={16} />, label: "LinkedIn" }
+                ].map((social, i) => (
+                  <a 
+                    key={i}
+                    href="#" 
+                    aria-label={social.label}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff" }}
+                  >
+                    {social.icon}
+                  </a>
+                ))}
               </div>
-              <Clock className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 rotate-12" />
             </motion.div>
+
           </div>
         </div>
       </section>

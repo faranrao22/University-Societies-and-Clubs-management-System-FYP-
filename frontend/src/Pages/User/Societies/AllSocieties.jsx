@@ -1,191 +1,228 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Users, Search, Info, Sparkles, 
-  ArrowRight, Globe, Loader2 
+import React, { useDeferredValue, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  ArrowRight,
+  Globe,
+  Loader2,
+  BookOpen,
+  Eye,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast"; // Ensure react-hot-toast is installed
-import API_BASE_URL from "../../../config/api.config";
+import { useQuery } from "@tanstack/react-query";
+import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
+import PublicSearchInput from "../../../Components/PublicSearchInput";
+
+const FALLBACK_SOCIETY_IMG =
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800";
+
+// 🔹 Premium Color Tokens
+const COLORS = {
+  dark: "#1e3a8a",
+  darkHover: "#1d4ed8",
+  lightGreen: "#1d4ed8",
+  gold: "#38bdf8",
+  goldHover: "#0ea5e9",
+  cream: "#e2e8f0",
+  text: "#111827",
+  muted: "#4B5563",
+  border: "rgba(30, 64, 175, 0.16)",
+};
 
 const AllSocieties = () => {
-  const [societies, setSocieties] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [joiningId, setJoiningId] = useState(null); // Track which society is currently being joined
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const deferredSearch = useDeferredValue(searchQuery);
+  const navigate = useNavigate();
 
-  const categories = ["All", "Science", "Arts", "Tech", "Culture", "Sports"];
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/societies/Allsocieties`, { withCredentials: true });
-        setSocieties(res.data.data || []);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast.error("Failed to load societies");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, []);
-
-  // --- IMPLEMENTED JOIN LOGIC ---
-  const handleJoinSociety = async (societyId) => {
-    setJoiningId(societyId);
-    try {
-      // Endpoint matches your route: router.post('/join/:id', verifyToken, requestToJoinSociety);
-      const res = await axios.post(
-        `${API_BASE_URL}/memberShip/join/${societyId}`, 
-        {}, // Empty body
-        { withCredentials: true }
-      );
-
-      if (res.data.success) {
-        toast.success(res.data.message || "Join request sent!");
-      } else {
-        toast.error(res.data.message || "Could not send request");
-      }
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || "Error joining society";
-      toast.error(errorMsg);
-      console.error("Error joining society:", err);
-    } finally {
-      setJoiningId(null);
-    }
-  };
-
-  const filteredSocieties = societies.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === "All" || s.department === activeCategory;
-    return matchesSearch && matchesCategory;
+  const { data: societies = [], isPending: loading } = useQuery({
+    queryKey: ["public", "societies", "all"],
+    queryFn: async () => {
+      const res = await axios.get(`${API_BASE_URL}/societies/Allsocieties`, { withCredentials: true });
+      return res.data.data || [];
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
+    retry: 1,
   });
 
-  return (
-    <div className="min-h-screen bg-[#f8f9ff]">
-      {/* --- HERO SECTION (Remains same) --- */}
-      <section className="relative pt-32 pb-48 bg-[#0a0118] overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] -mr-20 -mt-20" />
-        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-indigo-300 text-xs font-black uppercase tracking-widest mb-6">
-              <Sparkles size={14} /> University Ecosystem
-            </span>
-            <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-              Discover Your <span className="text-indigo-400">Passion.</span>
-            </h1>
-            <div className="max-w-2xl mx-auto relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500" size={22} />
-              <input 
-                type="text"
-                placeholder="Search societies..."
-                className="w-full pl-16 pr-6 py-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-4xl text-white outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all"
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </motion.div>
-        </div>
-      </section>
+  // Memoize heavy grouping/filtering so typing and rerenders stay fast.
+  const groupedSocieties = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    return societies.reduce((acc, society) => {
+      const dept = society.department || "General / Others";
+      if (!acc[dept]) acc[dept] = [];
 
-      {/* --- GRID SECTION --- */}
-      <section className="max-w-7xl mx-auto px-6 -mt-20 relative z-20 pb-24">
-        
-        {/* Category Filters (Remains same) */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
-                activeCategory === cat ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" : "bg-white text-gray-500 border border-gray-100 shadow-sm"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+      if (!q || society.name.toLowerCase().includes(q)) {
+        acc[dept].push(society);
+      }
+      return acc;
+    }, {});
+  }, [societies, deferredSearch]);
+
+  const departments = Object.keys(groupedSocieties).filter(
+    (dept) => groupedSocieties[dept].length > 0
+  );
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: COLORS.cream }}>
+      <section className="max-w-6xl mx-auto px-6 py-10 md:py-12">
+        <div className="mb-10 rounded-2xl border bg-white p-5 shadow-sm sm:p-6" style={{ borderColor: COLORS.border }}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-black tracking-tight sm:text-2xl" style={{ color: COLORS.text }}>
+                Find your society
+              </h2>
+              <p className="mt-1 text-sm sm:text-base" style={{ color: COLORS.muted }}>
+                Browse by department or search by society name.
+              </p>
+            </div>
+            <PublicSearchInput
+              className="w-full sm:w-[340px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by society name…"
+            />
+          </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {[1, 2, 3].map(i => <div key={i} className="h-[450px] bg-white rounded-[2.5rem] animate-pulse" />)}
+          <div className="flex flex-col justify-center items-center h-80">
+            <Loader2 className="animate-spin mb-4" size={40} style={{ color: COLORS.gold }} />
+            <p className="text-sm font-medium" style={{ color: COLORS.muted }}>Loading societies...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <AnimatePresence>
-              {filteredSocieties.map((item, idx) => (
-                <motion.div
-                  key={item._id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="group bg-white rounded-[2.5rem] p-5 shadow-sm hover:shadow-2xl border border-gray-100 flex flex-col h-full transition-all duration-500"
+          departments.map((dept, deptIndex) => (
+            <div key={dept} className="mb-16 last:mb-0">
+              {/* Department Header */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: deptIndex * 0.1 }}
+                className="flex items-center gap-4 mb-7 pb-5"
+                style={{ borderBottom: `2px solid ${COLORS.border}` }}
+              >
+                <div
+                  className="p-3 rounded-xl flex items-center justify-center shadow-sm"
+                  style={{
+                    backgroundColor: COLORS.dark,
+                    boxShadow: "0 6px 20px rgba(27, 77, 40, 0.25)",
+                  }}
                 >
-                  {/* Society Image */}
-                  <div className="relative w-full h-56 rounded-4xl overflow-hidden mb-6">
-                    <img 
-                      src={`http://localhost:8000/uploads/${item.image}`}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                      onError={(e) => e.target.src = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800"}
-                    />
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-widest shadow-sm">
-                      {item.department || "General"}
-                    </div>
-                  </div>
+                  <BookOpen size={22} color="#fff" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: COLORS.text }}>
+                    {dept}
+                  </h2>
+                  <p className="text-sm font-medium mt-1" style={{ color: COLORS.muted }}>
+                    {groupedSocieties[dept].length}{" "}
+                    {groupedSocieties[dept].length === 1 ? "society" : "societies"}
+                  </p>
+                </div>
+              </motion.div>
 
-                  {/* Info */}
-                  <div className="grow px-2">
-                    <div className="flex items-center gap-2 mb-2 text-gray-400">
-                      <Globe size={14} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">{item.joinPolicy?.replace('_', ' ') || 'OPEN'}</span>
-                    </div>
-                    <h3 className="text-2xl font-black text-gray-900 mb-2">{item.name}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-6">
-                      {item.description || "Become part of this amazing community and start your journey today."}
-                    </p>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-7">
+                {groupedSocieties[dept].map((item) => {
+                  const cardImg = uploadFileUrl(item.image) || FALLBACK_SOCIETY_IMG;
+                  return (
+                  <article
+                    key={item._id}
+                    className="group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                    style={{
+                      borderColor: COLORS.border,
+                      boxShadow: "0 4px 18px rgba(15, 23, 42, 0.06)",
+                    }}
+                  >
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={cardImg}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = FALLBACK_SOCIETY_IMG;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#111827]/65 via-[#111827]/15 to-transparent pointer-events-none" />
 
-                  {/* Actions */}
-                  <div className="space-y-3 mt-auto">
-                    <div className="flex items-center gap-2 mb-4 px-2">
-                      <Users size={16} className="text-indigo-500" />
-                      <span className="text-xs font-bold text-gray-700">{item.members?.length || 0} Members</span>
+                      <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
+                        <span
+                          className="rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B4D28] shadow-sm"
+                          style={{ backgroundColor: COLORS.gold }}
+                        >
+                          {item.joinPolicy || "Open"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* JOIN BUTTON */}
-                      <button 
-                        onClick={() => handleJoinSociety(item._id)}
-                        disabled={joiningId === item._id}
-                        className={`py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 group/join shadow-lg ${
-                          joiningId === item._id 
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed shadow-none" 
-                          : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
-                        }`}
+                    <div className="p-5 sm:p-6 flex flex-col grow">
+                      <h3 className="mb-2 text-lg font-black leading-snug transition-colors group-hover:text-[#B8860B]" style={{ color: COLORS.text }}>
+                        {item.name}
+                      </h3>
+
+                      <p className="text-sm leading-relaxed mb-5 line-clamp-3 flex-grow min-h-[3.75rem]" style={{ color: COLORS.muted }}>
+                        {item.description ||
+                          "Connect with members, join events, and grow skills alongside peers who share your interests."}
+                      </p>
+
+                      <div className="mb-5 flex items-center gap-5 border-t pt-4" style={{ borderColor: COLORS.border }}>
+                        <div
+                          className="flex items-center gap-1.5 text-sm font-semibold"
+                          style={{ color: COLORS.muted }}
+                        >
+                          <Users size={15} style={{ color: COLORS.gold }} />
+                          {item.members?.length || 0} members
+                        </div>
+                        <div
+                          className="flex items-center gap-1.5 text-sm font-semibold truncate"
+                          style={{ color: COLORS.muted }}
+                          title={item.department || "General"}
+                        >
+                          <Globe size={15} style={{ color: COLORS.gold }} className="shrink-0" />
+                          <span className="truncate">{item.department || "General"}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/society/${item._id}`)}
+                        className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+                        style={{
+                          backgroundColor: COLORS.dark,
+                          color: "#fff",
+                          boxShadow: "0 8px 18px rgba(27, 77, 40, 0.2)",
+                        }}
                       >
-                        {joiningId === item._id ? (
-                          <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                          <>
-                            Join Now
-                            <ArrowRight size={16} className="group-hover/join:translate-x-1 transition-transform" />
-                          </>
-                        )}
-                      </button>
-                      
-                      <button className="py-4 bg-white border-2 border-gray-100 hover:border-indigo-600 hover:text-indigo-600 text-gray-600 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2">
-                        Details
-                        <Info size={16} />
+                        <Eye size={18} strokeWidth={2.25} />
+                        View details now
+                        <ArrowRight size={16} className="opacity-90" />
                       </button>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                  </article>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
+
+        {!loading && departments.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <div 
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
+              style={{ backgroundColor: "rgba(27, 77, 40, 0.08)" }}
+            >
+              <Search size={28} style={{ color: COLORS.muted }} />
+            </div>
+            <p className="text-base font-bold mb-2" style={{ color: COLORS.text }}>No societies found</p>
+            <p className="text-sm" style={{ color: COLORS.muted }}>Try adjusting your search terms</p>
+          </motion.div>
         )}
       </section>
     </div>

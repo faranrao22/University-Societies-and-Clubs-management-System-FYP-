@@ -56,18 +56,18 @@ export default function DraftElections() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex justify-center items-center text-gray-500">
+      <div className="min-h-screen flex justify-center items-center text-[#4B5563]">
         Loading...
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Draft Elections</h1>
+    <div className="min-h-screen p-6">
+      <div >
+        <h1 className="text-3xl font-bold mb-6 text-[#3699FF]">Draft Elections</h1>
 
         {draftElections.length === 0 && (
-          <div className="text-center py-10 text-gray-500">
+          <div className="text-center py-10 text-[#4B5563]">
             No draft elections found.
           </div>
         )}
@@ -76,7 +76,7 @@ export default function DraftElections() {
           {draftElections.map((election) => (
             <div
               key={election._id}
-              className="bg-white p-6 rounded-lg shadow"
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
             >
               {/* Election Summary */}
               <div className="flex justify-between items-center cursor-pointer">
@@ -96,7 +96,7 @@ export default function DraftElections() {
                   onClick={() =>
                     setOpenFormId(openFormId === election._id ? null : election._id)
                   }
-                  className="px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
+                  className="px-4 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110"
                 >
                   {openFormId === election._id ? "Close" : "Set Apply Deadline"}
                 </button>
@@ -116,7 +116,7 @@ export default function DraftElections() {
                   />
                   <button
                     onClick={() => handleUpdate(election)}
-                    className="px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
+                    className="px-4 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110"
                   >
                     Update & Open Applications
                   </button>

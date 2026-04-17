@@ -49,18 +49,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Signup
-  const signup = async (fullname, email, password, rollNo, Department, semester) => {
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API_BASE_URL}/auth/signup`, {
-        fullname, email, password, rollNo, Department, semester
-      }, { withCredentials: true });
-      setUser(res.data.user);
-      return res.data;
-    } finally {
-      setLoading(false);
-    }
-  };
+ // AuthContext.js
+const signup = async (formData) => { // 1. Change to accept a single object
+  setLoading(true);
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/auth/signup`, // Make sure this URL is correct
+      formData, 
+      { 
+        withCredentials: true,
+        // No need to manually set headers; 
+        // Axios automatically detects FormData and sets 'multipart/form-data'
+      }
+    );
+    setUser(res.data.user);
+    return res.data;
+  } catch (err) {
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <AuthContext.Provider value={{ user, login, logout, signup, loading }}>

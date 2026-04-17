@@ -81,17 +81,23 @@ export default function ElectionDraft() {
       });
     } catch (err) {
       console.error(err);
-      HotToast.error("Failed to save Draft.");
+
+      const message =
+        err.response?.data?.message || // backend message
+        err.message ||                 // fallback axios error
+        "Something went wrong";        // final fallback
+
+      HotToast.error(message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-900">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen p-6 font-sans text-gray-900">
+      <div >
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">Create Election Draft</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold tracking-tight text-[#3699FF]">Create Election Draft</h1>
+          <p className="text-sm text-[#4B5563]">
             Start by creating a draft election. You can schedule applications and voting later.
           </p>
         </div>
@@ -102,11 +108,10 @@ export default function ElectionDraft() {
             <button
               key={society._id}
               onClick={() => setSelectedSociety(society)}
-              className={`px-5 py-2 text-sm font-semibold border transition
-                ${
-                  selectedSociety?._id === society._id
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+              className={`px-5 py-2 text-sm font-semibold border rounded-lg transition
+                ${selectedSociety?._id === society._id
+                  ? "bg-[#3699FF] text-white border-[#3699FF] shadow-md"
+                  : "bg-white text-[#4B5563] border-gray-300 hover:bg-gray-100"
                 }`}
             >
               {society.name}
@@ -115,11 +120,11 @@ export default function ElectionDraft() {
         </div>
 
         {!selectedSociety ? (
-          <div className="bg-white border border-dashed border-gray-300 p-16 text-center text-gray-500">
+          <div className="bg-white border border-dashed border-gray-300 rounded-xl p-16 text-center text-[#4B5563]">
             Select a society to create a draft election
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 p-6 rounded-lg shadow">
+          <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Title */}
               <div>
@@ -130,7 +135,7 @@ export default function ElectionDraft() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-900 rounded"
+                  className="w-full border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-[#3699FF]/30 rounded-lg"
                   required
                 />
               </div>
@@ -146,11 +151,10 @@ export default function ElectionDraft() {
                       key={role.name}
                       type="button"
                       onClick={() => toggleRole(role.name)}
-                      className={`px-3 py-1.5 text-xs font-bold border rounded transition
-                        ${
-                          formData.selectedRoles.includes(role.name)
-                            ? "bg-gray-900 text-white border-gray-900"
-                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                      className={`px-3 py-1.5 text-xs font-bold border rounded-lg transition
+                        ${formData.selectedRoles.includes(role.name)
+                          ? "bg-[#3699FF] text-white border-[#3699FF]"
+                          : "bg-white text-[#4B5563] border-gray-300 hover:bg-gray-100"
                         }`}
                     >
                       {role.name}
@@ -168,7 +172,7 @@ export default function ElectionDraft() {
                   name="votingEligibility"
                   value={formData.votingEligibility}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#3699FF]/30"
                 >
                   <option value="MEMBERS_ONLY">Registered Members Only</option>
                   <option value="ANYONE">Open to All Students</option>
@@ -184,7 +188,7 @@ export default function ElectionDraft() {
                   name="applicationEligibility"
                   value={formData.applicationEligibility}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#3699FF]/30"
                 >
                   <option value="MEMBERS_ONLY">Registered Members Only</option>
                   <option value="ANYONE">Open to All Students</option>
@@ -195,7 +199,7 @@ export default function ElectionDraft() {
               <button
                 type="submit"
                 disabled={!formData.selectedRoles.length}
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 font-bold transition disabled:opacity-40"
+                className="w-full bg-[#3699FF] hover:brightness-110 text-white py-3 font-bold rounded-lg shadow-md transition disabled:opacity-40"
               >
                 Save Draft
               </button>

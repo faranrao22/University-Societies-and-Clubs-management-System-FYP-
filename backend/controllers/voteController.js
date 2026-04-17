@@ -6,7 +6,7 @@ const castVote = async (req, res) => {
     const { role, candidateId } = req.body;
     const userId = req.user.id;
 
-    const election = await Election.findById(electionId).populate("societyId");
+    const election = await Election.findById(electionId).populate("societyId").populate("candidates.user", "fullname");
     if (!election) {
       return res.status(404).json({ success: false, message: "Election not found" });
     }
@@ -20,13 +20,13 @@ const castVote = async (req, res) => {
       return res.status(403).json({ success: false, message: "Election is not live" });
     }
 
-    // 1. Eligibility Check
+    // 1️⃣ Eligibility Check
     if (election.votingEligibility === "MEMBERS_ONLY" &&
       !election.societyId.members.includes(userId)) {
       return res.status(403).json({ success: false, message: "Only members can vote" });
     }
 
-    // 2. Check if already voted FOR THIS SPECIFIC ROLE
+    // 2️⃣ Check if already voted FOR THIS ROLE
     const alreadyVotedForRole = election.votes.find(
       v => v.voter.toString() === userId.toString() && v.role === role
     );
@@ -37,7 +37,7 @@ const castVote = async (req, res) => {
       });
     }
 
-    // 3. Record vote
+    // 3️⃣ Record vote
     election.votes.push({
       voter: userId,
       role: role,
@@ -46,9 +46,33 @@ const castVote = async (req, res) => {
 
     await election.save();
 
+    // 4️⃣ Emit updated results to all users in this election room
+    const io = req.app.get("io");
+
+    // Build updated results
+    const updatedResults = {};
+    for (const r of election.roles) {
+      const candidatesForRole = election.candidates.filter(c => c.role === r);
+      updatedResults[r] = candidatesForRole.map(c => {
+        const votesCount = election.votes.filter(
+          v => v.role === r && v.candidate.toString() === c.user._id.toString()
+        ).length;
+        return {
+          candidateId: c.user._id,
+          fullname: c.user.fullname,
+          votes: votesCount,
+        };
+      });
+    }
+
+    // Emit to everyone in the election room
+    io.to(election._id.toString()).emit("liveResultsUpdate", updatedResults);
+
+    // 5️⃣ Send response
     res.status(200).json({
       success: true,
-      message: `Vote for ${role} recorded successfully`
+      message: `Vote for ${role} recorded successfully`,
+      results: updatedResults // optional: return snapshot immediately
     });
 
   } catch (err) {

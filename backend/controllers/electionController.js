@@ -12,7 +12,27 @@ const createElection = async (req, res) => {
         message: "Society not found",
       });
     }
+  // ✅ NEW CHECK: prevent duplicate active elections
+    const existingElection = await Election.findOne({
+      societyId,
+      status: {
+        $in: [
+          "DRAFT",
+          "APPLICATIONS_OPEN",
+          "APPLICATIONS_CLOSED",
+          "CANDIDATES_FINALIZED",
+          "VOTING_SCHEDULED",
+          "VOTING_LIVE"
+        ]
+      }
+    });
 
+    if (existingElection) {
+      return res.status(400).json({
+        success: false,
+        message: "This society already has an active election",
+      });
+    }
     // Only allow roles that exist in society
     const societyRoleNames = society.roles.map(r => r.name);
     const validRoles = roles.filter(r => societyRoleNames.includes(r));
@@ -204,7 +224,9 @@ const getSocietyElections = async (req, res) => {
 };
 const getElections = async (req, res) => {
   try {
-    const elections = await Election.find().sort({ createdAt: -1 });
+    const elections = await Election.find()
+      .populate("societyId", "name") // 🔥 THIS FIXES EVERYTHING
+      .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       data: elections,
@@ -215,7 +237,94 @@ const getElections = async (req, res) => {
       message: err.message,
     });
   }
-}
+};
+
+const MANAGER_ELECTION_STATUSES = [
+  "DRAFT",
+  "APPLICATIONS_OPEN",
+  "APPLICATIONS_CLOSED",
+  "CANDIDATES_FINALIZED",
+  "VOTING_SCHEDULED",
+  "VOTING_LIVE",
+  "COMPLETED",
+];
+
+/** PATCH status and/or applyDeadline for an election the user manages (society Creator). */
+const patchManagerElection = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { electionId } = req.params;
+    const { status, applyDeadline } = req.body;
+
+    if (status === undefined && applyDeadline === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide at least one of: status, applyDeadline",
+      });
+    }
+
+    const societies = await Society.find({ Creator: userId }).select("_id");
+    const allowedSocietyIds = new Set(societies.map((s) => s._id.toString()));
+
+    const election = await Election.findById(electionId);
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    if (!allowedSocietyIds.has(election.societyId.toString())) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only manage elections for societies you created",
+      });
+    }
+
+    if (status !== undefined && status !== null) {
+      if (!MANAGER_ELECTION_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status. Allowed: ${MANAGER_ELECTION_STATUSES.join(", ")}`,
+        });
+      }
+      election.status = status;
+    }
+
+    if (applyDeadline !== undefined) {
+      if (applyDeadline === null || applyDeadline === "") {
+        election.applyDeadline = undefined;
+      } else {
+        const d = new Date(applyDeadline);
+        if (Number.isNaN(d.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid applyDeadline date",
+          });
+        }
+        election.applyDeadline = d;
+      }
+    }
+
+    await election.save();
+
+    const updated = await Election.findById(election._id)
+      .populate("societyId", "name")
+      .populate("candidates.user", "fullname email");
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: "Election updated",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
 const getElectionById = async (req, res) => {
   try {
@@ -249,55 +358,232 @@ const assignSocietyRolesFromElection = async (req, res) => {
     const { electionId } = req.params;
 
     const election = await Election.findById(electionId);
-    if (!election) return res.status(404).json({ success: false, message: "Election not found" });
-
-    if (election.status !== "COMPLETED") {
-      return res.status(403).json({ success: false, message: "Election must be completed to assign roles" });
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
     }
 
-    // ✅ Check if roles are already assigned
+    if (election.status !== "COMPLETED") {
+      return res.status(403).json({
+        success: false,
+        message: "Election must be completed",
+      });
+    }
+
     if (election.rolesAssigned) {
-      return res.status(400).json({ success: false, message: "Roles have already been assigned for this election" });
+      return res.status(400).json({
+        success: false,
+        message: "Roles already assigned",
+      });
     }
 
     const society = await Society.findById(election.societyId);
-    if (!society) return res.status(404).json({ success: false, message: "Society not found" });
+    if (!society) {
+      return res.status(404).json({
+        success: false,
+        message: "Society not found",
+      });
+    }
 
-    // Assign roles based on votes
+    // 🔥 RESET winners array
+    election.winners = [];
+
+    // 🔥 Process each role
     for (const role of election.roles) {
-      const candidatesForRole = election.candidates.filter(c => c.role === role);
-      let maxVotes = -1;
-      let winnerUserId = null;
+      const voteCounter = {};
 
-      for (const candidate of candidatesForRole) {
-        const votesCount = election.votes.filter(
-          v => v.role === role && v.candidate.toString() === candidate.user.toString()
-        ).length;
-
-        if (votesCount > maxVotes) {
-          maxVotes = votesCount;
-          winnerUserId = candidate.user;
+      // 1️⃣ Initialize candidates for this role
+      for (const candidate of election.candidates) {
+        if (candidate.role === role) {
+          voteCounter[candidate.user.toString()] = 0;
         }
       }
 
-      if (winnerUserId) {
-        const societyRole = society.roles.find(r => r.name === role);
-        if (societyRole) societyRole.user = winnerUserId;
+      // 2️⃣ Count votes
+      for (const vote of election.votes) {
+        if (
+          vote.role === role &&
+          voteCounter[vote.candidate.toString()] !== undefined
+        ) {
+          voteCounter[vote.candidate.toString()]++;
+        }
+      }
+
+      const candidateIds = Object.keys(voteCounter);
+      if (!candidateIds.length) continue;
+
+      // 3️⃣ Find max votes
+      let maxVotes = -1;
+      for (const id of candidateIds) {
+        if (voteCounter[id] > maxVotes) {
+          maxVotes = voteCounter[id];
+        }
+      }
+
+      // 4️⃣ Get top candidates (tie handling)
+      const topCandidates = candidateIds.filter(
+        (id) => voteCounter[id] === maxVotes
+      );
+
+      // 5️⃣ Pick random winner (tie-break)
+      const winner =
+        topCandidates[Math.floor(Math.random() * topCandidates.length)];
+
+      // 6️⃣ Save winner in ELECTION (NEW FIX)
+      election.winners.push({
+        role,
+        user: winner,
+      });
+
+      // 7️⃣ Assign role in SOCIETY
+      const societyRole = society.roles.find((r) => r.name === role);
+      if (societyRole) {
+        societyRole.user = winner;
       }
     }
 
-    // Mark election as roles assigned
+    // 8️⃣ Mark as assigned
     election.rolesAssigned = true;
+
     await election.save();
     await society.save();
 
-    res.status(200).json({ success: true, message: "Roles assigned successfully", society });
+    return res.status(200).json({
+      success: true,
+      message: "Roles assigned successfully",
+      winners: election.winners, // optional but useful for frontend
+      society,
+    });
 
   } catch (err) {
     console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+const getLiveElectionResults = async (req, res) => {
+  try {
+    const electionId = req.params.electionId;
+
+    // CHANGE: Allow both LIVE and COMPLETED statuses
+    const election = await Election.findOne({
+      _id: electionId,
+      status: { $in: ["VOTING_LIVE"] }
+    }).populate("candidates.user", "fullname email")
+      .populate("societyId", "name")
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election results not available or election not found",
+      });
+    }
+
+    const results = {};
+    for (const role of election.roles) {
+      const candidatesForRole = election.candidates.filter(c => c.role === role);
+      results[role] = candidatesForRole.map(candidate => {
+        const voteCount = election.votes.filter(
+          v => v.role === role && v.candidate.toString() === candidate.user._id.toString()
+        ).length;
+
+        return {
+          candidateId: candidate.user._id,
+          fullname: candidate.user.fullname,
+          votes: voteCount,
+        };
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      electionId: election._id,
+      title: election.title,
+      status: election.status, // Pass the status to frontend
+      societyName: election.societyId?.name || null, // ✅ ADD THIS
+      results,
+    });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+// controllers/finalResultsController.js
+const getFinalResults = async (req, res) => {
+  try {
+    const electionId = req.params.electionId;
+
+    // Only COMPLETED elections
+    const election = await Election.findOne({
+      _id: electionId,
+      status: "COMPLETED",
+    }).populate("candidates.user", "fullname email  Department semester")
+      .populate("societyId", "name")
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found or not completed yet",
+      });
+    }
+
+    const results = {};
+
+    for (const role of election.roles) {
+      const candidatesForRole = election.candidates.filter(c => c.role === role);
+
+      results[role] = candidatesForRole.map(c => {
+        // Safe candidate ID
+        const candidateId = c.user?._id || c._id;
+
+        // Safe name
+        const fullname = c.user?.fullname || "Deleted User / Unknown";
+
+        // Count votes safely
+        const votes = election.votes.filter(
+          v => v.role === role && v.candidate?.toString() === candidateId.toString()
+        ).length;
+
+        return {
+          candidateId: candidateId.toString(),
+          fullname,
+          email: c.user?.email || null,
+          image: c.image || null,
+          Department: c.user?.Department || null,
+          votes,
+          semester: c.user?.semester || null
+        };
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      electionId: election._id,
+      title: election.title,
+      societyName: election.societyId?.name || null, // ✅ ADD THIS
+
+      status: election.status,
+      results,
+    });
+    console.log("Final Results Sent:", {
+      electionId: election._id,
+      title: election.title,
+      status: election.status,
+      societyName: election.societyId?.name || null, // ✅ ADD THIS
+      results,
+    });
+  } catch (err) {
+    console.error("Final Results Error:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+
+
 
 module.exports = {
   createElection,
@@ -307,7 +593,9 @@ module.exports = {
   getElections,
   getElectionById,
   assignSocietyRolesFromElection,
-  scheduleElection
-
+  scheduleElection,
+  getLiveElectionResults,
+  getFinalResults,
+  patchManagerElection,
 };
 

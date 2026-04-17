@@ -5,14 +5,12 @@ import { toast } from "react-hot-toast";
 import {
   Calendar,
   ChevronDown,
-  ChevronUp,
   Play,
   Clock,
   Building2,
   AlertCircle,
   Mail,
   Fingerprint,
-  User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,7 +24,6 @@ function ScheduleVoting() {
 
   const fetchElections = async () => {
     try {
-      setLoading(true);
       const res = await axios.get(`${API_BASE_URL}/election/my-drafts`, {
         withCredentials: true,
       });
@@ -37,7 +34,6 @@ function ScheduleVoting() {
 
       setElections(finalized);
     } catch (err) {
-      console.error(err);
       toast.error("Failed to fetch elections");
     } finally {
       setLoading(false);
@@ -50,25 +46,26 @@ function ScheduleVoting() {
 
   const makeElectionLive = async (electionId) => {
     if (!startDate || !endDate) {
-      toast.error("Start date and End date are required");
+      toast.error("Start & End date required");
       return;
     }
 
     try {
       setActionLoading(true);
+
       await axios.patch(
         `${API_BASE_URL}/election/ScheduleElection/${electionId}`,
         { startDate, endDate },
         { withCredentials: true }
       );
+
       toast.success("Election is now LIVE");
       fetchElections();
       setSelectedElection(null);
       setStartDate("");
       setEndDate("");
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to start election");
+      toast.error("Failed to start election");
     } finally {
       setActionLoading(false);
     }
@@ -76,200 +73,180 @@ function ScheduleVoting() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-slate-500 font-bold text-xs uppercase tracking-widest">Loading Dashboard</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-[#3699FF] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-8">
-      <div className="max-w-6xl mx-auto">
-
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+    <div className="min-h-screen p-6 text-gray-900">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></div>
-              <span className="text-indigo-600 font-black uppercase tracking-[0.2em] text-[10px]">Scheduling Engine</span>
-            </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Deployment Center</h1>
+            <h1 className="text-lg font-bold tracking-tight text-[#3699FF]">
+              Election Deployment Center
+            </h1>
+            <p className="text-xs text-[#4B5563] uppercase tracking-widest">
+              Schedule & Activate Voting
+            </p>
           </div>
-          <p className="text-slate-500 text-sm font-medium max-w-xs md:text-right">
-            Manage finalized candidates and configure voting timelines for live deployment.
-          </p>
         </div>
+      </header>
 
+      <main className="max-w-6xl mx-auto px-6 mt-10 space-y-6">
         {!elections.length ? (
-          <div className="bg-white rounded-3xl p-20 text-center border border-slate-200 shadow-sm">
-            <AlertCircle size={48} className="mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">No Queued Elections</h3>
-            <p className="text-slate-500 text-sm mt-1">Finalize your candidate reviews to see elections here.</p>
+          <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
+            <AlertCircle className="mx-auto text-gray-300 mb-4" size={36} />
+            <p className="text-[#4B5563] text-sm">
+              No finalized elections available
+            </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {elections.map((election) => {
-              const isOpen = selectedElection === election._id;
+          elections.map((election) => {
+            const isOpen = selectedElection === election._id;
 
-              return (
-                <div key={election._id} className={`bg-white rounded-[2rem] border transition-all duration-500 overflow-hidden ${isOpen ? 'border-indigo-500 shadow-2xl ring-1 ring-indigo-500/20' : 'border-slate-200 shadow-sm hover:shadow-md'}`}>
-
-                  {/* Summary Bar */}
-                  <div
-                    onClick={() => setSelectedElection(isOpen ? null : election._id)}
-                    className="p-6 cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${isOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        <Building2 size={24} />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-black text-slate-900">{election.title}</h2>
-                        <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">{election.societyId.name}</span>
-                      </div>
+            return (
+              <div
+                key={election._id}
+                className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+              >
+                {/* Summary */}
+                <div
+                  onClick={() =>
+                    setSelectedElection(isOpen ? null : election._id)
+                  }
+                  className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-slate-100 border border-gray-200 flex items-center justify-center text-[#3699FF]">
+                      <Building2 size={20} />
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-8">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Candidates</span>
-                        <span className="text-sm font-bold text-slate-800">{election.candidates.length} Verified</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</span>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                          <span className="text-sm font-bold text-emerald-600 italic">Finalized</span>
-                        </div>
-                      </div>
-                      <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                        <ChevronDown size={24} className="text-slate-300" />
-                      </div>
+                    <div>
+                      <h2 className="font-bold text-lg">
+                        {election.title}
+                      </h2>
+                      <p className="text-xs uppercase tracking-widest text-[#4B5563]">
+                        {election.societyId?.name || "Unknown Society"}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Expandable Section */}
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: "auto" }}
-                        exit={{ height: 0 }}
-                      >
-                        <div className="px-8 pb-8">
+                  <ChevronDown
+                    className={`transition-transform ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
 
-                          {/* Candidates Table */}
-                          <div className="mt-4 mb-10 bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
-                              <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.15em]">Candidate Roster</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left">
-                                <thead className="bg-slate-100/50 border-b border-slate-200">
-                                  <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Profile</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Contact Info</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Identity</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Role</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                  {election.candidates.map((c) => (
-                                    <tr key={c._id} className="hover:bg-white transition-colors group">
-                                      <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                          <img
-                                            src={`${API_BASE_URL.replace("/api", "")}/uploads/${c.image}`}
-                                            alt=""
-                                            className="w-10 h-10 rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all border border-slate-200 shadow-sm"
-                                          />
-                                          <span className="text-sm font-bold text-slate-800">{c.user.fullname}</span>
-                                        </div>
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                                          <Mail size={12} /> {c.email || "N/A"}
-                                        </div>
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                                          <Fingerprint size={12} /> {c.cnic}
-                                        </div>
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <span className="px-2 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase rounded tracking-wider border border-indigo-100">
-                                          {c.role}
-                                        </span>
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <div className="flex justify-center">
-                                          <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full border border-emerald-100 shadow-sm">
-                                            <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></div>
-                                            {c.status}
-                                          </span>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
+                {/* Expand */}
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
+                    >
+                      <div className="p-6 border-t border-gray-200 space-y-8">
 
-                          {/* Scheduling Controls */}
-                          <div className="grid lg:grid-cols-3 gap-6 items-end bg-white p-8 rounded-[2rem] border-2 border-slate-100 shadow-inner">
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2 ml-1">
-                                <Clock size={14} className="text-indigo-600" />
-                                <label className="text-xs font-black text-slate-800 uppercase tracking-widest">Start Time</label>
+                        {/* Candidate List */}
+                        <div className="space-y-3">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-[#3699FF]">
+                            Verified Candidates
+                          </h3>
+
+                          {election.candidates.map((c) => (
+                            <div
+                              key={c._id}
+                              className="flex items-center justify-between bg-slate-100/90 border border-gray-100 p-4 rounded-lg"
+                            >
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={`${API_BASE_URL.replace("/api", "")}/uploads/${c.image}`}
+                                  className="w-10 h-10 rounded-md object-cover"
+                                  alt=""
+                                />
+                                <div>
+                                  <p className="font-semibold text-sm">
+                                    {c.user?.fullname}
+                                  </p>
+                                  <p className="text-xs text-slate-500 flex items-center gap-2">
+                                    <Mail size={12} />
+                                    {c.user?.email}
+                                  </p>
+                                </div>
                               </div>
+
+                              <span className="text-[10px] font-bold uppercase px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
+                                {c.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Scheduling Section */}
+                        <div className="bg-gradient-to-r from-[#3699FF] via-[#4dabf7] to-[#7ec8fc] rounded-xl p-6 text-white shadow-md">
+                          <h3 className="text-sm font-bold mb-6">
+                            Configure Voting Window
+                          </h3>
+
+                          <div className="grid md:grid-cols-3 gap-4 items-end">
+                            <div>
+                              <label className="text-xs uppercase text-white/70">
+                                Start Date
+                              </label>
                               <input
                                 type="datetime-local"
                                 value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white outline-none transition-all"
+                                onChange={(e) =>
+                                  setStartDate(e.target.value)
+                                }
+                                className="w-full mt-2 bg-white/10 border border-white/25 rounded-md px-3 py-2 text-sm text-white placeholder-white/50"
                               />
                             </div>
 
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2 ml-1">
-                                <Calendar size={14} className="text-rose-500" />
-                                <label className="text-xs font-black text-slate-800 uppercase tracking-widest">End Time</label>
-                              </div>
+                            <div>
+                              <label className="text-xs uppercase text-white/70">
+                                End Date
+                              </label>
                               <input
                                 type="datetime-local"
                                 value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-rose-500/10 focus:bg-white outline-none transition-all"
+                                onChange={(e) =>
+                                  setEndDate(e.target.value)
+                                }
+                                className="w-full mt-2 bg-white/10 border border-white/25 rounded-md px-3 py-2 text-sm text-white placeholder-white/50"
                               />
                             </div>
 
                             <button
-                              onClick={() => makeElectionLive(election._id)}
+                              onClick={() =>
+                                makeElectionLive(election._id)
+                              }
                               disabled={actionLoading}
-                              className="w-full flex items-center justify-center gap-3 px-8 py-3.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[11px] tracking-[0.2em] hover:bg-indigo-600 shadow-xl shadow-slate-200 transition-all active:scale-[0.98] disabled:opacity-50"
+                              className="bg-white text-[#3699FF] hover:bg-white/90 transition px-6 py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
                             >
                               {actionLoading ? (
-                                "Initializing..."
+                                "Deploying..."
                               ) : (
-                                <>Deploy Live <Play size={14} fill="white" /></>
+                                <>
+                                  Deploy <Play size={14} />
+                                </>
                               )}
                             </button>
                           </div>
-
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })
         )}
-      </div>
+      </main>
     </div>
   );
 }

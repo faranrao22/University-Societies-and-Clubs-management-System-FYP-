@@ -14,7 +14,7 @@ const societySchema = new mongoose.Schema({
   membersCount: { type: Number },
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
-  status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+  status: { type: String, enum: ["Active", "Inactive"], default: "Inactive" },
   email: { type: String },
   phone: { type: String },
   description: { type: String },
@@ -22,20 +22,14 @@ const societySchema = new mongoose.Schema({
   image: { type: String },
   joinRequests: [
     {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      status: {
-        type: String,
-        enum: ["Pending", "Approved", "Rejected"],
-        default: "Pending",
-      },
-      requestedAt: {
-        type: Date,
-        default: Date.now,
-      },
-    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
+    reason: { type: String, required: true },
+    skills: { type: String }, // Photography, Management, etc.
+    experience: { type: String }, 
+    portfolioLink: { type: String },
+    requestedAt: { type: Date, default: Date.now },
+  },
   ],
   roles: {
     type: [roleSchema],

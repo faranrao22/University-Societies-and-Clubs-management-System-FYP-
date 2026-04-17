@@ -2,56 +2,98 @@
 let bcrypt = require("bcrypt")
 let jwt = require("jsonwebtoken");
 const users = require("../models/users");
+const { notifyAllAdmins } = require("../utils/notifyUser");
 
 const signup = async (req, res) => {
-  const { fullname, email, password, rollNo, Department, semester, role } = req.body;
+  try {
+    // 1. Text fields are parsed by Multer and put into req.body
+    const {
+      fullname,
+      email,
+      password,
+      rollNo,
+      Department, // Must match frontend key 'Department'
+      semester,
+      session,
+      role
+    } = req.body;
 
-  // Check if all required fields are provided
-  if (!fullname || !email || !password || !Department) {
-    return res.status(400).json({
-      success: false,
-      message: "Please fill in all required fields",
+    // 🔹 Validation check
+    if (!fullname || !email || !password || !Department) {
+      return res.status(400).json({
+        success: false,
+        message: "Fullname, email, password and department are required",
+      });
+    }
+
+    const existingUser = await users.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "User already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const userRole = role?.trim().toLowerCase() || "user";
+
+    // 🔹 Files are in req.files because we used upload.fields()
+    const profileImage = req.files?.profileImage?.[0]?.filename || null;
+    const studentCardFront = req.files?.studentCardFront?.[0]?.filename || null;
+    const studentCardBack = req.files?.studentCardBack?.[0]?.filename || null;
+
+    const userData = {
+      fullname,
+      email,
+      password: hashedPassword,
+      Department,
+      role: userRole,
+      profileImage,
+    };
+
+    if (userRole === "user") {
+      if (!rollNo || !semester || !session) {
+        return res.status(400).json({
+          success: false,
+          message: "Roll number, semester and session are required for students",
+        });
+      }
+
+      if (!studentCardFront || !studentCardBack) {
+        return res.status(400).json({
+          success: false,
+          message: "Both front and back images of student card are required",
+        });
+      }
+
+      userData.rollNo = rollNo;
+      userData.semester = semester; // Ensure this matches your String type in Schema
+      userData.session = session;
+      userData.studentCardFront = studentCardFront;
+      userData.studentCardBack = studentCardBack;
+    }
+
+    const newUser = await users.create(userData);
+
+    if (userRole === "user") {
+      notifyAllAdmins(req, {
+        type: "ADMIN_NEW_STUDENT_REGISTERED",
+        title: "New student registration",
+        message: `${fullname} (${email}) registered from ${Department || "—"}.`,
+        meta: { userId: newUser._id.toString() },
+      }).catch(() => {});
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: newUser,
     });
+
+  } catch (error) {
+    console.error("SIGNUP_ERROR:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
-
-  // Optional: Only admin can create manager
-  // if (role === "manager" && req.user.role !== "admin") {
-  //   return res.status(403).json({
-  //     success: false,
-  //     message: "Only admin can create managers",
-  //   });
-  // }
-
-  // Check if user already exists
-  const existingUser = await users.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({
-      success: false,
-      message: "User already exists",
-    });
-  }
-
-  // Hash password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Create user
-  const newUser = await users.create({
-    fullname,
-    email,
-    password: hashedPassword,
-    rollNo: role === "user" ? rollNo : undefined, // only for users
-    semester: role === "user" ? semester : undefined, // only for users
-    Department,
-    role: role || "user", // important! use the role from request
-  });
-
-  return res.status(200).json({
-    success: true,
-    message: "User created successfully",
-    user: newUser,
-  });
 };
+
 
 const login = async (req, res) => {
   let { email, password } = req.body;
@@ -84,13 +126,13 @@ const login = async (req, res) => {
     { expiresIn: "7d" } // optional expiration
   );
 
-res.cookie("token", token, {
-  httpOnly: true,
-  secure: false,       // must be false on localhost
-  sameSite: "lax",     // BEST for localhost
-  path: "/",           // ensure all routes get it
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: false,       // must be false on localhost
+    sameSite: "lax",     // BEST for localhost
+    path: "/",           // ensure all routes get it
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   return res.status(200).json({
     success: true,
@@ -100,12 +142,12 @@ res.cookie("token", token, {
 };
 const logout = (req, res) => {
   // Clear the cookie containing the token
-res.clearCookie("token", {
-  httpOnly: true,
-  secure: false,
-  sameSite: "lax",
-  path: "/",
-});
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/",
+  });
 
 
   return res.status(200).json({
@@ -140,13 +182,13 @@ const getUser = async (req, res) => {
 };
 
 const getAllUsers = async (req, res) => {
-    try {
-        const usersList = await users.find().select("-password").sort({ createdAt: -1 });
-        res.status(200).json({ success: true, users: usersList });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
+  try {
+    const usersList = await users.find().select("-password").sort({ createdAt: -1 });
+    res.status(200).json({ success: true, users: usersList });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 }
 // Update user by ID
 const updateUser = async (req, res) => {
@@ -192,6 +234,10 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (req.user?.id && id === req.user.id) {
+      return res.status(400).json({ success: false, message: "You cannot delete your own account" });
+    }
+
     const user = await users.findById(id);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -206,6 +252,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, getUser,getAllUsers,deleteUser,updateUser };
+module.exports = { signup, login, logout, getUser, getAllUsers, deleteUser, updateUser };
 
 

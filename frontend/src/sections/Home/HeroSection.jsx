@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import one from "../../images/one.jpg";
 import two from "../../images/two.jpg";
 import three from "../../images/three.jpg";
@@ -7,150 +8,134 @@ import three from "../../images/three.jpg";
 const slides = [
   {
     id: 1,
-    title: "Welcome to USCMS",
-    desc: "Your hub for university events and student engagement",
+    title: "Build your campus impact",
+    desc: "Discover societies, events, and leadership opportunities in one modern student platform.",
     img: one,
-    cta: "Get Started",
+    primaryCta: { label: "Explore Societies", to: "/community" },
+    secondaryCta: { label: "View Events", to: "/events" },
   },
   {
     id: 2,
-    title: "Join Societies",
-    desc: "Explore and connect with passionate communities",
+    title: "Join vibrant communities",
+    desc: "Connect with like-minded students, participate in activities, and grow through collaboration.",
     img: two,
-    cta: "Explore Societies",
+    primaryCta: { label: "Browse Societies", to: "/community" },
+    secondaryCta: { label: "Latest Posts", to: "/society-posts" },
   },
   {
     id: 3,
-    title: "Attend Events",
-    desc: "Never miss out on exciting campus events and activities",
+    title: "Never miss key events",
+    desc: "Track workshops, elections, and society activities with a smooth, centralized experience.",
     img: three,
-    cta: "View Events",
+    primaryCta: { label: "Open Events", to: "/events" },
+    secondaryCta: { label: "Election Hub", to: "/applyForElections" },
   },
 ];
 
-const SLIDE_DURATION = 6000;
+const SLIDE_DURATION = 8000;
 
-function HeroSlider() {
+export default function HeroSlider() {
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const timerRef = useRef(null);
 
-  // Auto slide (never pauses)
-  useEffect(() => {
-    const timer = setInterval(() => {
+  const startTimer = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setDirection(1);
       setIndex((prev) => (prev + 1) % slides.length);
     }, SLIDE_DURATION);
+  };
 
-    return () => clearInterval(timer);
+  useEffect(() => {
+    startTimer();
+    return () => clearInterval(timerRef.current);
   }, []);
 
-  return (
-    <div className="relative w-full min-h-svh flex items-center overflow-hidden">
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent z-10" />
+  const goToSlide = (i) => {
+    setDirection(i > index ? 1 : -1);
+    setIndex(i);
+    startTimer();
+  };
 
-      {/* Slides */}
-      <AnimatePresence mode="wait">
+  return (
+    <section className="relative min-h-[70vh] overflow-hidden bg-[#0f172a] md:min-h-[76vh]">
+      <AnimatePresence custom={direction} initial={false} mode="sync">
         <motion.div
           key={slides[index].id}
-          className="absolute w-full h-full"
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
+          custom={direction}
+          className="absolute inset-0"
+          initial={{ x: direction > 0 ? "100%" : "-100%", opacity: 0.25 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: direction > 0 ? "-100%" : "100%", opacity: 0.25 }}
+          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         >
-          <motion.img
-            src={slides[index].img}
-            alt={slides[index].title}
-            className="w-full h-full object-cover"
-            initial={{ scale: 1 }}
-            animate={{ scale: 1.05 }}
-            transition={{ duration: SLIDE_DURATION / 1000, ease: "linear" }}
-            loading="lazy"
-          />
+          <img src={slides[index].img} alt={slides[index].title} className="h-full w-full object-cover" />
         </motion.div>
       </AnimatePresence>
 
-      {/* Content */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-16">
-        <AnimatePresence mode="wait">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0f172a]/92 via-[#0f172a]/75 to-[#0f172a]/30" />
+
+      <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-6xl items-center px-6 py-12 md:min-h-[76vh]">
+        <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={slides[index].id}
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -40 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.45 }}
             className="max-w-3xl"
           >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-6">
-              <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-              <span className="text-white text-sm">
-                University Society & Event Management
-              </span>
-            </div>
-
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            <span className="mb-4 inline-flex items-center rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/90">
+              University Societies & Clubs Management
+            </span>
+            <h1 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
               {slides[index].title}
             </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">{slides[index].desc}</p>
 
-            {/* Description */}
-            <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8">
-              {slides[index].desc}
-            </p>
-
-            {/* Buttons */}
-            <div className="flex flex-wrap gap-4">
-              <button className="px-8 py-4 bg-linear-to-r from-[#331E86] to-[#27005D] text-white font-semibold rounded-lg shadow-lg hover:scale-105 transition">
-                {slides[index].cta}
-              </button>
-
-              <button className="px-8 py-4 bg-white/10 backdrop-blur-md text-white font-semibold rounded-lg border border-white/30 hover:bg-white/20 transition">
-                Learn More
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-12 pt-8 border-t border-white/20 grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {[
-                ["50+", "Active Societies"],
-                ["200+", "Events Annually"],
-                ["5000+", "Active Members"],
-              ].map(([num, label]) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
-                    {num}
-                  </div>
-                  <span className="text-gray-300 text-sm">{label}</span>
-                </div>
-              ))}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                to={slides[index].primaryCta.to}
+                className="rounded-xl bg-[#2563eb] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#1d4ed8]"
+              >
+                {slides[index].primaryCta.label}
+              </Link>
+              <Link
+                to={slides[index].secondaryCta.to}
+                className="rounded-xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-[#0f172a]"
+              >
+                {slides[index].secondaryCta.label}
+              </Link>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Progress Bars */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-6 md:px-12 pb-6">
-        <div className="max-w-7xl mx-auto flex gap-2">
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-6">
+        <div className="mx-auto flex max-w-6xl gap-2.5">
           {slides.map((_, i) => (
-            <div
+            <button
               key={i}
-              className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden"
+              onClick={() => goToSlide(i)}
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/20"
+              aria-label={`Go to slide ${i + 1}`}
             >
-              <motion.div
-                className="h-full bg-white"
-                initial={{ width: "0%" }}
-                animate={{ width: i === index ? "100%" : "0%" }}
-                transition={{
-                  duration: i === index ? SLIDE_DURATION / 1000 : 0.3,
-                  ease: "linear",
-                }}
-              />
-            </div>
+              {i === index ? (
+                <motion.div
+                  className="h-full bg-[#38bdf8]"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: SLIDE_DURATION / 1000, ease: "linear" }}
+                  style={{ transformOrigin: "left" }}
+                />
+              ) : (
+                <div className="h-full bg-white/35" style={{ width: i < index ? "100%" : "0%" }} />
+              )}
+            </button>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
-
-export default HeroSlider;

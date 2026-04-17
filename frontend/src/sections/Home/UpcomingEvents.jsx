@@ -1,138 +1,148 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CalendarDays, MapPin, ArrowUpRight, Clock } from "lucide-react";
+import { CalendarDays, MapPin, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import API_BASE_URL, { uploadFileUrl } from "../../config/api.config";
 
-const events = [
-  {
-    id: 1,
-    title: "Science Society Workshop",
-    date: "Jan 20, 2026",
-    time: "10:00 AM",
-    location: "Main Lab 04",
-    category: "Workshop",
-    description: "Hands-on workshop on robotics and AI hosted by the Science Society.",
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800",
-    color: "bg-blue-600",
-  },
-  {
-    id: 2,
-    title: "Cultural Fest 2026",
-    date: "Feb 05, 2026",
-    time: "05:00 PM",
-    location: "University Auditorium",
-    category: "Festival",
-    description: "A week-long celebration of music, dance, and art by the Arts Club.",
-    image: "https://images.unsplash.com/photo-1514525253344-f814d074e015?auto=format&fit=crop&q=80&w=800",
-    color: "bg-purple-600",
-  },
-  {
-    id: 3,
-    title: "Tech Talk Series",
-    date: "Feb 15, 2026",
-    time: "02:30 PM",
-    location: "IT Block Seminar Hall",
-    category: "Seminar",
-    description: "Guest lectures on the latest tech trends organized by the IT Society.",
-    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=800",
-    color: "bg-indigo-600",
-  },
-];
+const COLORS = {
+  dark: "#1e3a8a",
+  gold: "#38bdf8",
+  cream: "#e2e8f0",
+  text: "#111827",
+  muted: "#4B5563",
+  border: "rgba(30, 64, 175, 0.16)",
+};
 
-const UpcomingEvents = () => {
+const PLACEHOLDER_IMG =
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=900&auto=format&fit=crop";
+
+function fmtDate(value) {
+  if (!value) return "Date TBA";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "Date TBA";
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function UpcomingEvents() {
+  const { data: events = [], isPending: loading } = useQuery({
+    queryKey: ["public", "home", "upcoming-events"],
+    queryFn: async () => {
+      const res = await axios.get(`${API_BASE_URL}/event/allevents`, {
+        params: { page: 1, limit: 6 },
+      });
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
+      return list.slice(0, 3);
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+  });
+
   return (
-    <section className="py-24 px-6 bg-white">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+    <section className="px-6 py-14 md:py-16" style={{ backgroundColor: COLORS.cream }}>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-col justify-between gap-4 md:mb-10 md:flex-row md:items-end">
           <div className="max-w-xl">
-            <motion.h2 
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              className="text-4xl font-black text-gray-900 tracking-tight mb-4"
+            <div
+              className="mb-5 inline-flex items-center gap-2 rounded-xl px-4 py-2"
+              style={{ backgroundColor: `${COLORS.gold}1A`, color: COLORS.dark }}
             >
-              Experience <span className="text-indigo-600">Campus Life</span>
-            </motion.h2>
-            <p className="text-gray-500 text-lg leading-relaxed">
-              Don't miss out on the latest workshops, festivals, and talks. Join your peers and grow your network.
+              <Sparkles size={14} style={{ color: COLORS.gold }} />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Upcoming</span>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight md:text-4xl" style={{ color: COLORS.dark }}>
+              Campus <span className="text-[#D4A017]">Events</span>
+            </h2>
+            <p className="mt-2 text-base leading-relaxed" style={{ color: COLORS.muted }}>
+              Discover what is happening next across societies and clubs.
             </p>
           </div>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 border-2 border-gray-100 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-all flex items-center gap-2"
+
+          <Link
+            to="/events"
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wide text-white transition hover:brightness-105"
+            style={{ backgroundColor: COLORS.dark }}
           >
-            View All Events <ArrowUpRight size={18} />
-          </motion.button>
+            View All
+            <ArrowRight size={14} />
+          </Link>
         </div>
 
-        {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {events.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group bg-white rounded-4xl overflow-hidden border border-gray-100 shadow-xl shadow-gray-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 flex flex-col h-full"
-            >
-              {/* Image Container */}
-              <div className="relative h-64 overflow-hidden">
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-wider ${event.color} shadow-lg`}>
-                    {event.category}
-                  </span>
-                </div>
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button className="bg-white text-gray-900 px-6 py-2.5 rounded-xl font-bold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                    Register Now
-                  </button>
-                </div>
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="animate-spin" style={{ color: COLORS.gold }} />
+          </div>
+        ) : events.length === 0 ? (
+          <div
+            className="rounded-2xl border border-dashed p-10 text-center text-sm"
+            style={{ borderColor: COLORS.border, color: COLORS.muted }}
+          >
+            No events available right now.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {events.map((event, index) => (
+              <motion.div
+                key={event._id || index}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+              >
+                <Link to="/events" className="group block h-full">
+                  <article
+                    className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    <div className="relative h-52 overflow-hidden">
+                      <img
+                        src={uploadFileUrl(event.image) || PLACEHOLDER_IMG}
+                        alt={event.title || "Event"}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
 
-              {/* Content Container */}
-              <div className="p-8 flex flex-col grow">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg text-sm font-bold">
-                    <CalendarDays size={16} />
-                    {event.date}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-                    <Clock size={16} />
-                    {event.time}
-                  </div>
-                </div>
-
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">
-                  {event.title}
-                </h3>
-                
-                <p className="text-gray-500 text-sm leading-relaxed mb-6 grow">
-                  {event.description}
-                </p>
-
-                <div className="pt-6 border-t border-gray-50 flex items-center justify-between mt-auto">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <MapPin size={16} className="text-red-400" />
-                    <span className="text-xs font-medium uppercase tracking-wide">{event.location}</span>
-                  </div>
-                  <button className="text-indigo-600 font-bold text-sm hover:underline underline-offset-4">
-                    Details
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                    <div className="flex grow flex-col p-6">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.dark }}>
+                        {event.category || "Event"}
+                      </p>
+                      <h3
+                        className="mb-3 text-lg font-bold leading-tight transition-colors group-hover:text-[#D4A017]"
+                        style={{ color: COLORS.text }}
+                      >
+                        {event.title || "Untitled event"}
+                      </h3>
+                      <p className="mb-5 line-clamp-2 text-sm" style={{ color: COLORS.muted }}>
+                        {(event.description || "Join this upcoming campus event.")
+                          .replace(/<[^>]+>/g, " ")
+                          .replace(/\s+/g, " ")
+                          .trim()}
+                      </p>
+                      <div
+                        className="mt-auto flex items-center justify-between border-t pt-4 text-xs"
+                        style={{ borderColor: "rgba(75, 85, 99, 0.14)", color: COLORS.muted }}
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <CalendarDays size={14} /> {fmtDate(event.startDateTime)}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <MapPin size={14} /> {event.venue || "TBA"}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
-};
-
-export default UpcomingEvents;
+}

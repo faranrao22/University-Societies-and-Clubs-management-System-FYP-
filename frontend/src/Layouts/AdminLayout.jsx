@@ -1,17 +1,28 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import AdminSidebar from '../Components/AdminSidebar'; // your toggleable overlay sidebar
+import React, { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import AdminSidebar from "../Components/AdminSidebar";
+import AdminTopbar from "../Components/AdminTopbar";
 
 function AdminLayout() {
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar (overlay on mobile, static on desktop) */}
-      <AdminSidebar />
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const location = useLocation();
 
-      {/* Main content: no left margin on mobile, only on lg+ */}
-      <main className="flex-1 p-4 lg:ml-60 lg:p-6 overflow-y-auto w-full">
-        <Outlet />
-      </main>
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <div className="flex min-h-screen bg-[#F4F7FE] text-slate-900 antialiased">
+      <AdminSidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-60">
+        <AdminTopbar onOpenNav={() => setMobileNavOpen(true)} />
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

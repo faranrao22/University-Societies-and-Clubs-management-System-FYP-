@@ -24,24 +24,24 @@ function Members() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-[#3699FF]">
             Society Members
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[#4B5563]">
             Select a society to view and manage its members
           </p>
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-gray-300">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-100">
+            <table className="min-w-full divide-y divide-gray-100 text-sm">
+              <thead className="bg-slate-100">
                 <tr>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">
                     #
@@ -66,7 +66,7 @@ function Members() {
                   societies.map((society, idx) => (
                     <tr
                       key={society._id}
-                      className="hover:bg-gray-50 transition"
+                      className="hover:bg-gray-100 transition"
                     >
                       <td className="px-6 py-4 text-gray-700">
                         {idx + 1}
@@ -88,7 +88,7 @@ function Members() {
                               { state: { societyName: society.name } }
                             )
                           }
-                          className="inline-flex items-center text-gray-900 hover:text-gray-700 font-medium"
+                          className="inline-flex items-center text-[#3699FF] hover:text-[#2B8ACF] font-medium"
                         >
                           View
                           <IoArrowForward className="ml-1" />

@@ -9,55 +9,61 @@ import {
   BarChart3 
 } from "lucide-react";
 
+// 🔹 Exact Color Palette from Image
+const COLORS = {
+  darkGreen: "#1e3a8a",
+  brightGreen: "#2563eb",
+  gold: "#38bdf8",
+  cream: "#e2e8f0",
+  cardBorder: "#E5E2DC",
+  textPrimary: "#111827",
+  textSecondary: "#4B5563",
+};
+
 const FeaturesSection = () => {
   const features = [
     {
       icon: <Users size={24} />,
       title: "Vibrant Societies",
       description: "Browse curated student organizations. Filter by interest, join recruitment drives, and manage your memberships in one place.",
-      color: "from-blue-500 to-cyan-400",
     },
     {
       icon: <Calendar size={24} />,
       title: "Smart Event Tracking",
       description: "Sync campus workshops, seminars, and fests directly to your personal calendar with automated RSVP reminders.",
-      color: "from-purple-500 to-pink-500",
     },
     {
       icon: <Trophy size={24} />,
       title: "Election Portal",
       description: "Transparent digital voting and candidate profiles. Run for office or vote for your next student representatives securely.",
-      color: "from-amber-500 to-orange-400",
     },
     {
       icon: <ShieldCheck size={24} />,
       title: "Verified Certifications",
       description: "Earn digital certificates for society participation and event attendance, verifiable by recruiters via QR codes.",
-      color: "from-emerald-500 to-teal-400",
     },
     {
       icon: <Zap size={24} />,
       title: "Instant Notifications",
       description: "Get real-time updates on venue changes, emergency announcements, and last-minute society meeting calls.",
-      color: "from-red-500 to-rose-400",
     },
     {
       icon: <BarChart3 size={24} />,
       title: "Resource Analytics",
       description: "Society leads can track attendance, budget utilization, and engagement metrics through a dedicated dashboard.",
-      color: "from-indigo-500 to-purple-400",
     },
   ];
 
   return (
-    <section className="py-24 px-6 bg-[#fcfcfd]">
-      <div className="max-w-7xl mx-auto">
+    <section className="px-6 py-14 md:py-16" style={{ backgroundColor: COLORS.cream }}>
+      <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-20">
+        <div className="mx-auto mb-10 max-w-3xl text-center md:mb-12">
           <motion.span 
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="text-indigo-600 font-bold tracking-widest uppercase text-sm"
+            className="inline-block font-bold tracking-widest uppercase text-xs"
+            style={{ color: COLORS.brightGreen }}
           >
             Efficiency Redefined
           </motion.span>
@@ -65,15 +71,17 @@ const FeaturesSection = () => {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black text-gray-900 mt-4 mb-6 tracking-tight"
+            className="mb-5 mt-3 text-3xl font-black tracking-tight md:text-4xl"
+            style={{ color: COLORS.darkGreen }}
           >
-            Everything you need to <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-purple-600">thrive on campus.</span>
+            Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(90deg, ${COLORS.brightGreen}, ${COLORS.gold})` }}>thrive on campus.</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-gray-600 leading-relaxed"
+            className="text-base leading-relaxed md:text-lg"
+            style={{ color: COLORS.textSecondary }}
           >
             USCMS provides the digital infrastructure to bridge the gap between 
             students, societies, and university administration.
@@ -81,34 +89,52 @@ const FeaturesSection = () => {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="group relative p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300"
+              transition={{ delay: index * 0.08 }}
+              whileHover={{ y: -4 }}
+              className="group relative p-6 bg-white border transition-all duration-150 hover:border-opacity-100"
+              style={{ 
+                borderColor: COLORS.cardBorder,
+                borderRadius: "8px",
+                borderWidth: "1px",
+              }}
             >
-              {/* Icon Background Circle */}
-              <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${feature.color} flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:rotate-6 transition-transform duration-300`}>
+              {/* Icon Container - Sharp & Precise */}
+              <div 
+                className="w-12 h-12 flex items-center justify-center text-white mb-5 transition-colors duration-150 group-hover:brightness-110"
+                style={{ 
+                  borderRadius: "6px",
+                  backgroundColor: index % 2 === 0 ? COLORS.darkGreen : COLORS.brightGreen,
+                }}
+              >
                 {feature.icon}
               </div>
 
               {/* Text Content */}
-              <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-indigo-600 transition-colors">
+              <h3 
+                className="text-lg font-bold mb-2 tracking-tight transition-colors duration-150"
+                style={{ color: COLORS.textPrimary }}
+              >
                 {feature.title}
               </h3>
-              <p className="text-gray-500 leading-relaxed text-sm italic md:not-italic">
+              <p 
+                className="text-sm leading-relaxed"
+                style={{ color: COLORS.textSecondary }}
+              >
                 {feature.description}
               </p>
 
-              {/* Subtle Decorative Element */}
-              <div className="absolute bottom-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-8 h-1 bg-indigo-100 rounded-full" />
-              </div>
+              {/* Sharp Hover Indicator */}
+              <div 
+                className="absolute bottom-0 left-6 right-6 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                style={{ backgroundColor: COLORS.gold }}
+              />
             </motion.div>
           ))}
         </div>
@@ -117,13 +143,25 @@ const FeaturesSection = () => {
         {/* <motion.div 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          className="mt-20 p-8 rounded-[2rem] bg-indigo-600 text-white flex flex-col md:flex-row items-center justify-between gap-6"
+          className="mt-20 p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+          style={{ 
+            backgroundColor: COLORS.darkGreen, 
+            borderRadius: "8px",
+            color: "#FFFFFF"
+          }}
         >
           <div>
             <h4 className="text-2xl font-bold">Ready to lead your society?</h4>
-            <p className="text-indigo-100">Setup your society profile in less than 5 minutes.</p>
+            <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>Setup your society profile in less than 5 minutes.</p>
           </div>
-          <button className="px-8 py-4 bg-white text-indigo-600 font-bold rounded-2xl hover:bg-indigo-50 transition-colors shadow-xl">
+          <button 
+            className="px-8 py-3 font-bold text-sm tracking-wide transition-colors duration-150 hover:brightness-95"
+            style={{ 
+              backgroundColor: COLORS.gold, 
+              color: COLORS.darkGreen,
+              borderRadius: "6px",
+            }}
+          >
             Register a Society
           </button>
         </motion.div> */}

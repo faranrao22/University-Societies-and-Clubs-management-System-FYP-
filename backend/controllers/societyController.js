@@ -1,4 +1,6 @@
 const SocietyModel = require("../models/societyModel");
+const User = require("../models/users");
+const { notifyAllAdmins } = require("../utils/notifyUser");
 const fs = require("fs");
 const path = require("path");
 
@@ -10,7 +12,6 @@ const createSociety = async (req, res) => {
       shortName,
       advisor,
       membersCount,
-      status,
       email,
       phone,
       description,
@@ -34,7 +35,6 @@ const createSociety = async (req, res) => {
       shortName,
       advisor,
       membersCount,
-      status,
       email,
       phone,
       description,
@@ -42,6 +42,15 @@ const createSociety = async (req, res) => {
       roles: [presidentRole], // include president role
       image: req.file ? req.file.filename : null,
     });
+
+    const creator = await User.findById(req.user.id).select("fullname email").lean().catch(() => null);
+    const creatorLabel = creator?.fullname || creator?.email || "A manager";
+    notifyAllAdmins(req, {
+      type: "ADMIN_NEW_SOCIETY_PENDING",
+      title: "New society pending review",
+      message: `${creatorLabel} registered "${name}" (${shortName}). Approve it under Society requests.`,
+      meta: { societyId: newSociety._id.toString(), creatorId: req.user.id },
+    }).catch(() => {});
 
     return res.status(200).json({
       success: true,
@@ -78,12 +87,16 @@ const updateSociety = async (req, res) => {
       roles, // optional roles excluding President
     } = req.body;
 
+    const isManager = String(req.user.role || "").toLowerCase() === "manager";
+
     // Update basic fields
     society.name = name || society.name;
     society.shortName = shortName || society.shortName;
     society.advisor = advisor || society.advisor;
     society.membersCount = membersCount || society.membersCount;
-    society.status = status || society.status;
+    if (!isManager && status && ["Active", "Inactive"].includes(status)) {
+      society.status = status;
+    }
     society.email = email || society.email;
     society.phone = phone || society.phone;
     society.description = description || society.description;
@@ -160,7 +173,8 @@ const deleteSociety = async (req, res) => {
 const getAllSocieties = async (req, res) => {
   try {
     const societies = await SocietyModel.find()
-      .populate("roles.user", "fullname"); // populate user with only fullname
+      .populate("Creator", "fullname email")
+      .populate("roles.user", "fullname email");
     return res.status(200).json({ success: true, data: societies });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
@@ -182,13 +196,80 @@ const getMySocieties = async (req, res) => {
 const getSocietiesByid = async (req, res) => {
   try {
     const society = await SocietyModel.findById(req.params.id)
-      .populate("roles.user", "fullname");
+  .populate("roles.user"); // populate all fields
+console.log(JSON.stringify(society.roles, null, 2));
+
+      console.log("Fetched Society:", society.name, society.roles); // Debug log
     return res.status(200).json({ success: true, data: society });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+// ✅ NEW: Get societies where user is a member
+const getMemberSocieties = async (req, res) => {
+  try {
+    const societies = await SocietyModel.find({ 
+      members: req.user.id  // ✅ Find societies where user ID is in members array
+    })
+    .populate("Creator", "fullname email department")  // Populate creator info
+    .populate("roles.user", "fullname profileImage")    // Populate role assignments
+    .populate("members", "fullname profileImage")       // Populate member list
+    .sort({ createdAt: -1 });
 
+    return res.status(200).json({ 
+      success: true, 
+      data: societies,
+      count: societies.length 
+    });
+  } catch (err) {
+    return res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+};
+
+// ✅ OPTIONAL: Get society details with membership status for current user
+const getSocietyWithMembership = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const society = await SocietyModel.findById(id)
+      .populate("Creator", "fullname email department profileImage")
+      .populate("roles.user", "fullname profileImage")
+      .populate("members", "fullname profileImage department")
+      .populate("joinRequests.user", "fullname profileImage");
+
+    if (!society) {
+      return res.status(404).json({ success: false, message: "Society not found" });
+    }
+
+    // ✅ Add membership status for current user
+    const isMember = society.members.some(m => m._id.toString() === req.user.id);
+    const isCreator = society.Creator._id.toString() === req.user.id;
+    const pendingRequest = society.joinRequests.find(
+      r => r.user?._id?.toString() === req.user.id && r.status === "Pending"
+    );
+
+    const societyWithStatus = society.toObject();
+    societyWithStatus.currentUserStatus = {
+      isMember,
+      isCreator,
+      hasPendingRequest: !!pendingRequest,
+      canApply: !isMember && !pendingRequest && !isCreator
+    };
+
+    return res.status(200).json({ 
+      success: true, 
+      data: societyWithStatus 
+    });
+  } catch (err) {
+    return res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+};
 
 module.exports = {
   createSociety,
@@ -197,4 +278,6 @@ module.exports = {
   getAllSocieties,
   getMySocieties,
   getSocietiesByid,
+  getMemberSocieties,        // ✅ NEW
+  getSocietyWithMembership
 };

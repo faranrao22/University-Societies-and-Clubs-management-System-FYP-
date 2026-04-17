@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import API_BASE_URL from "../../../config/api.config";
+import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { FaEdit } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
@@ -11,7 +11,6 @@ function Society() {
   const { user } = useAuth();
   const [societies, setSocieties] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState(null);
 
@@ -25,7 +24,8 @@ function Society() {
         `${API_BASE_URL}/societies/Mysocieties/${user._id}`,
         { withCredentials: true }
       );
-      setSocieties(res.data.data);
+      const list = res.data?.data || [];
+      setSocieties(list.filter((s) => s.status === "Active"));
     } catch (err) {
       console.error(err);
     }
@@ -55,63 +55,56 @@ function Society() {
     const matchesSearch =
       society.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       society.president?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "All" || society.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans">
+    <div className="min-h-screen p-6 font-sans">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Societies & Clubs</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-[#3699FF] tracking-tight">Societies & Clubs</h1>
+          <p className="mt-1 text-sm text-gray-500">Active societies only. Pending societies appear under Society status.</p>
+        </div>
         <Link to="/manager/societyform">
-          <button className="bg-gray-900 text-white px-5 py-2 font-medium tracking-wide hover:bg-gray-800 transition">
+          <button className="bg-[#3699FF] text-white px-5 py-2.5 font-medium tracking-wide rounded-lg shadow-md hover:brightness-110 transition">
             Add New
           </button>
         </Link>
       </div>
 
-      {/* Search + Filter */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 bg-white border border-gray-300 p-4 mb-6">
+      {/* Search */}
+      <div className="flex flex-col md:flex-row justify-between gap-4 bg-white border border-gray-200 p-4 mb-6 rounded-xl shadow-sm">
         <input
           type="text"
           placeholder="Search by Society or President"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/2 border-b-2 border-gray-300 focus:border-gray-900 focus:outline-none px-2 py-1"
+          className="w-full md:max-w-xl border-b-2 border-gray-300 focus:border-[#3699FF] focus:outline-none px-2 py-1 bg-transparent"
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full md:w-1/4 border-b-2 border-gray-300 focus:border-gray-900 focus:outline-none px-2 py-1"
-        >
-          <option value="All">All Statuses</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
       </div>
 
       {/* Society Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
         {filteredSocieties.length === 0 && (
           <p className="col-span-full text-center text-gray-500">
-            No societies found.
+            No active societies found.
           </p>
         )}
         {filteredSocieties.map((society) => (
           <div
             key={society._id}
-            className="bg-white border border-gray-200 shadow-none hover:shadow-md transition-transform transform hover:-translate-y-1"
+            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1"
           >
             <div className="w-full h-32 overflow-hidden mb-4">
               {society.image ? (
                 <img
-                  src={`http://localhost:8000/uploads/${society.image}`}
+                  src={uploadFileUrl(society.image)}
                   alt={society.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                <div className="w-full h-full bg-slate-100 flex items-center justify-center text-[#4B5563]">
                   No Image
                 </div>
               )}
@@ -127,7 +120,7 @@ function Society() {
               <p className="text-gray-500 text-xs">Members: {society.members?.length || 0}</p>
               <button
                 onClick={() => navigate(`/manager/societyDetails/${society._id}`)}
-                className="mt-2 w-full bg-gray-900 text-white text-sm font-medium py-2 hover:bg-gray-800 transition"
+                className="mt-2 w-full bg-[#3699FF] text-white text-sm font-medium py-2.5 rounded-lg hover:brightness-110 transition shadow-sm"
               >
                 View Details
               </button>
@@ -137,46 +130,34 @@ function Society() {
       </div>
 
       {/* Society Table */}
-      <div className="overflow-x-auto bg-white border border-gray-200">
-        <table className="min-w-full text-left divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+        <table className="min-w-full text-left divide-y divide-gray-100">
+          <thead className="bg-slate-100">
             <tr>
               <th className="px-6 py-3 text-gray-700 font-semibold">#</th>
               <th className="px-6 py-3 text-gray-700 font-semibold">Name</th>
               <th className="px-6 py-3 text-gray-700 font-semibold">President</th>
               <th className="px-6 py-3 text-gray-700 font-semibold">Members</th>
-              <th className="px-6 py-3 text-gray-700 font-semibold">Status</th>
               <th className="px-6 py-3 text-right text-gray-700 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {filteredSocieties.length === 0 ? (
               <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">
-                  No societies found.
+                <td colSpan="5" className="text-center py-4 text-gray-500">
+                  No active societies found.
                 </td>
               </tr>
             ) : (
               filteredSocieties.map((society, idx) => (
-                <tr key={society._id} className="hover:bg-gray-50 transition">
+                <tr key={society._id} className="hover:bg-gray-100 transition">
                   <td className="px-6 py-4 text-gray-700">{idx + 1}</td>
                   <td className="px-6 py-4 text-gray-900">{society.name}</td>
                   <td className="px-6 py-4 text-gray-700">{society.roles?.find(r => r.name === "President")?.user?.fullname || "N/A"}</td>
                   <td className="px-6 py-4 text-gray-700">{society.members?.length || 0}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                        society.status === "Active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {society.status}
-                    </span>
-                  </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
                     <Link to={`/manager/societyform/${society._id}/edit`}>
-                      <FaEdit size={18} className="text-indigo-600 hover:text-indigo-800 transition cursor-pointer" />
+                      <FaEdit size={18} className="text-[#3699FF] hover:text-[#2B8ACF] transition cursor-pointer" />
                     </Link>
                     <RiDeleteBinLine
                       size={18}
@@ -194,7 +175,7 @@ function Society() {
      {/* Delete Modal */}
 {showDeleteModal && (
   <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-    <div className="bg-white rounded-none p-6 w-80 shadow-lg border border-gray-200">
+    <div className="bg-white rounded-xl p-6 w-80 shadow-lg border border-gray-200">
       <div className="flex items-center gap-3 mb-4">
         <svg
           className="w-6 h-6 text-red-600"

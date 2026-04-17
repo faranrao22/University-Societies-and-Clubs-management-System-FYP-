@@ -2,16 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../../config/api.config";
-import { toast } from "react-hot-toast"; // ✅ FIX
+import { toast } from "react-hot-toast";
 import {
   FiArrowLeft,
   FiUser,
   FiMail,
   FiCheck,
   FiX,
-  FiShield,
   FiHash,
-  FiInfo,
+  FiShield,
 } from "react-icons/fi";
 
 function ReviewCandidate() {
@@ -22,7 +21,11 @@ function ReviewCandidate() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Fetch candidate details
+  // ✅ reason + action state
+  const [reason, setReason] = useState("");
+  const [activeAction, setActiveAction] = useState(null); 
+  // "reject" | "dispute" | null
+
   const fetchCandidate = async () => {
     try {
       const res = await axios.get(
@@ -31,7 +34,6 @@ function ReviewCandidate() {
       );
       setCandidate(res.data.data);
     } catch (err) {
-      console.error(err);
       toast.error("Failed to load candidate data");
     } finally {
       setLoading(false);
@@ -42,26 +44,47 @@ function ReviewCandidate() {
     fetchCandidate();
   }, [candidateId]);
 
-  // Approve / Reject candidate
+  // ✅ handle button click first (show input)
+  const handleSelectAction = (action) => {
+    if (action === "approve") {
+      handleAction("approve");
+      return;
+    }
+
+    setActiveAction(action); // show textarea
+    setReason(""); // reset old reason
+  };
+
   const handleAction = async (action) => {
     try {
+      if ((action === "reject" || action === "dispute") && reason.trim() === "") {
+        return toast.error("Please enter a reason");
+      }
+
       setActionLoading(true);
+
+      let statusValue = "";
+
+      if (action === "approve") statusValue = "approved";
+      else if (action === "reject") statusValue = "rejected";
+      else if (action === "dispute") statusValue = "inDispute";
 
       await axios.patch(
         `${API_BASE_URL}/election/update-application/${electionId}/${candidateId}`,
         {
-          status: action === "approve" ? "approved" : "rejected",
+          status: statusValue,
+          reason: reason.trim(),
         },
         { withCredentials: true }
       );
 
-      toast.success(
-        `Candidate ${action === "approve" ? "approved" : "rejected"} successfully`
-      );
+      toast.success(`Candidate marked as ${statusValue}`);
 
-      fetchCandidate(); // refresh UI
+      setReason("");
+      setActiveAction(null);
+      fetchCandidate();
+
     } catch (err) {
-      console.error(err);
       toast.error("Could not update candidate status");
     } finally {
       setActionLoading(false);
@@ -70,19 +93,16 @@ function ReviewCandidate() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mb-4"></div>
-        <span className="text-slate-500 font-medium tracking-widest text-xs uppercase">
-          Retrieving Dossier
-        </span>
+      <div className="min-h-screen flex items-center justify-center text-[#4B5563]">
+        Loading candidate details...
       </div>
     );
   }
 
   if (!candidate) {
     return (
-      <div className="p-20 text-center text-slate-500">
-        Document record not found.
+      <div className="min-h-screen flex items-center justify-center text-[#4B5563]">
+        Candidate not found.
       </div>
     );
   }
@@ -90,128 +110,142 @@ function ReviewCandidate() {
   const { fullname, email, image, cnic, status } = candidate;
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-slate-900 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-slate-500 hover:text-slate-900 text-sm font-medium"
-          >
-            <FiArrowLeft className="mr-2" /> Back
-          </button>
+    <div className="min-h-screen p-6">
+      <div className="max-w-6xl mx-auto">
 
-          <div className="flex items-center space-x-2">
-            <div
-              className={`h-2 w-2 rounded-full ${
-                status === "approved"
-                  ? "bg-emerald-500"
-                  : status === "rejected"
-                  ? "bg-rose-500"
-                  : "bg-amber-400"
-              }`}
-            />
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-600">
-              {status}
-            </span>
-          </div>
-        </div>
-      </header>
+        {/* BACK */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-sm text-[#4B5563] hover:text-[#3699FF] mb-6"
+        >
+          <FiArrowLeft className="mr-2" /> Back
+        </button>
 
-      <main className="max-w-5xl mx-auto px-6 mt-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Sidebar */}
-          <div>
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="aspect-square bg-slate-100">
-                <img
-                  src={`${API_BASE_URL.replace("/api", "")}/uploads/${image}`}
-                  alt={fullname}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              <div className="p-5">
-                <h1 className="text-xl font-bold">{fullname}</h1>
-                <p className="text-sm text-slate-500 mb-4">{email}</p>
+          {/* PROFILE */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-                <div className="pt-4 border-t border-slate-100">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">ID</span>
-                    <span className="font-mono text-slate-700">
-                      {candidateId.slice(0, 8)}...
-                    </span>
-                  </div>
-                </div>
+            <div className="aspect-square bg-slate-100">
+              <img
+                src={`${API_BASE_URL.replace("/api", "")}/uploads/${image}`}
+                alt={fullname}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <div className="p-5 text-center">
+              <h1 className="text-xl font-semibold text-[#3699FF]">{fullname}</h1>
+              <p className="text-sm text-gray-500">{email}</p>
+              <p className="text-xs text-gray-400 mt-2">CNIC: {cnic}</p>
+
+              <div className="mt-4">
+                <span className={`px-3 py-1 text-xs rounded-full font-medium
+                  ${
+                    status === "approved"
+                      ? "bg-green-100 text-green-700"
+                      : status === "rejected"
+                      ? "bg-red-100 text-red-700"
+                      : status === "inDispute"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {status === "inDispute" ? "IN DISPUTE" : status.toUpperCase()}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Main */}
+          {/* RIGHT */}
           <div className="md:col-span-2 space-y-6">
-            <section className="bg-white border border-slate-200 rounded-xl p-8">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8 flex items-center">
-                <FiInfo className="mr-2" /> Candidate Data
-              </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* DETAILS */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-semibold mb-4 text-[#3699FF]">Candidate Details</h2>
+
+              <div className="grid grid-cols-2 gap-4">
                 <DataField icon={<FiUser />} label="Full Name" value={fullname} />
                 <DataField icon={<FiMail />} label="Email" value={email} />
                 <DataField icon={<FiHash />} label="CNIC" value={cnic} />
-                <DataField
-                  icon={<FiShield />}
-                  label="Election Group"
-                  value="National Assembly"
-                />
               </div>
-            </section>
+            </div>
 
+            {/* ACTION */}
             {status === "pending" && (
-              <section className="bg-slate-900 rounded-xl p-8 text-white">
-                <div className="flex flex-col sm:flex-row justify-between gap-6">
-                  <div>
-                    <h3 className="text-lg font-bold">Verification Pending</h3>
-                    <p className="text-slate-400 text-sm">
-                      Approve or reject this candidate
-                    </p>
-                  </div>
+              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleAction("approve")}
-                      disabled={actionLoading}
-                      className="px-6 py-2.5 bg-emerald-500 rounded-lg font-bold flex items-center"
-                    >
-                      <FiCheck className="mr-2" /> Approve
-                    </button>
+                <h3 className="text-lg font-semibold text-[#3699FF]">Review Application</h3>
 
-                    <button
-                      onClick={() => handleAction("reject")}
-                      disabled={actionLoading}
-                      className="px-6 py-2.5 bg-rose-600 rounded-lg font-bold flex items-center"
-                    >
-                      <FiX className="mr-2" /> Reject
-                    </button>
-                  </div>
+                {/* ACTION BUTTONS */}
+                <div className="flex gap-3 flex-wrap">
+
+                  <button
+                    onClick={() => handleSelectAction("approve")}
+                    disabled={actionLoading}
+                    className="px-5 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110"
+                  >
+                    <FiCheck /> Approve
+                  </button>
+
+                  <button
+                    onClick={() => handleSelectAction("reject")}
+                    disabled={actionLoading}
+                    className="px-5 py-2 bg-red-500 text-white rounded-lg"
+                  >
+                    <FiX /> Reject
+                  </button>
+
+                  <button
+                    onClick={() => handleSelectAction("dispute")}
+                    disabled={actionLoading}
+                    className="px-5 py-2 bg-yellow-500 text-white rounded-lg"
+                  >
+                    <FiShield /> Dispute
+                  </button>
+
                 </div>
-              </section>
+
+                {/* ✅ SHOW INPUT ONLY WHEN REJECT OR DISPUTE CLICKED */}
+                {(activeAction === "reject" || activeAction === "dispute") && (
+                  <div className="mt-4 space-y-3">
+
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder={`Enter reason for ${activeAction}...`}
+                      rows={4}
+                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#3699FF]/30"
+                    />
+
+                    <button
+                      onClick={() => handleAction(activeAction)}
+                      disabled={actionLoading || reason.trim() === ""}
+                      className="px-5 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110 disabled:opacity-50"
+                    >
+                      Submit {activeAction}
+                    </button>
+
+                  </div>
+                )}
+
+              </div>
             )}
+
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
 
+/* FIELD */
 const DataField = ({ icon, label, value }) => (
-  <div>
-    <div className="flex items-center text-slate-400 mb-1">
-      <span className="text-xs">{icon}</span>
-      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest">
-        {label}
-      </span>
+  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
+    <div className="text-xs text-[#4B5563] flex gap-2 items-center">
+      {icon} {label}
     </div>
-    <p className="text-slate-900 font-semibold">{value}</p>
+    <div className="font-medium text-[#3699FF]">{value}</div>
   </div>
 );
 

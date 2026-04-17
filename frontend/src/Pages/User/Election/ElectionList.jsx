@@ -1,112 +1,93 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, ShieldCheck } from "lucide-react";
+import { Users, Calendar, ChevronRight, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL from "../../../config/api.config";
+import PublicSearchInput from "../../../Components/PublicSearchInput";
+import PublicSectionCard from "../../../Components/PublicSectionCard";
+import useDebouncedValue from "../../../hooks/useDebouncedValue";
 
-const statusMap = {
-  APPLICATIONS_OPEN: { label: "Applications Open", color: "bg-green-100 text-green-700" },
-  VOTING_SCHEDULED: { label: "Voting Scheduled", color: "bg-purple-100 text-purple-700" },
+const COLORS = {
+  primary: "#1e3a8a",
+  accent: "#38bdf8",
+  bg: "#e2e8f0",
+  surface: "#FFFFFF",
+  text: "#111827",
+  textMuted: "#4B5563",
+  border: "rgba(30, 64, 175, 0.2)",
+  borderLight: "rgba(30, 64, 175, 0.1)",
+};
+
+const statusConfig = {
+  APPLICATIONS_OPEN: { label: "Applications Open", text: COLORS.primary, bg: "rgba(29, 78, 216, 0.12)", border: COLORS.border },
+  APPLICATIONS_CLOSED: { label: "Applications Closed", text: COLORS.accent, bg: "rgba(56, 189, 248, 0.12)", border: "rgba(56, 189, 248, 0.25)" },
+  VOTING_SCHEDULED: { label: "Voting Scheduled", text: COLORS.primary, bg: "rgba(29, 78, 216, 0.12)", border: COLORS.border },
+  VOTING_LIVE: { label: "Voting Live", text: "#DC2626", bg: "rgba(220, 38, 38, 0.08)", border: "rgba(220, 38, 38, 0.2)" },
+  COMPLETED: { label: "Completed", text: COLORS.textMuted, bg: "rgba(75, 85, 99, 0.08)", border: COLORS.borderLight },
 };
 
 export default function ElectionListPage() {
   const navigate = useNavigate();
-  const [elections, setElections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 350);
+  const { data: elections = [], isPending: loading } = useQuery({
+    queryKey: ["public", "elections", "all"],
+    queryFn: async () => (await axios.get(`${API_BASE_URL}/election/allElections`, { withCredentials: true })).data.data || [],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchElections();
-  }, []);
+  const formatDate = (date) => (date ? new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBA");
+  const handleAction = (e) => navigate(e.status === "APPLICATIONS_OPEN" ? `/apply/${e._id}` : e.status === "COMPLETED" ? `/results/${e._id}` : `/VoteNow/${e._id}`);
 
-  const fetchElections = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/election/allElections`);
-      const filtered = (res.data.data || []).filter(
-        (e) => ["APPLICATIONS_OPEN", "VOTING_SCHEDULED"].includes(e.status)
-      );
-      setElections(filtered);
-    } catch (err) {
-      console.error("Error fetching elections:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "TBA";
-    return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full" />
-    </div>
+  const grouped = useMemo(
+    () =>
+      elections.reduce((acc, e) => {
+        const name = e.societyId?.name;
+        if (!name) return acc;
+        if (!acc[name]) acc[name] = [];
+        acc[name].push(e);
+        return acc;
+      }, {}),
+    [elections]
   );
 
+  const filtered = useMemo(
+    () =>
+      Object.keys(grouped).reduce((acc, society) => {
+        const query = debouncedSearch.toLowerCase();
+        const list = grouped[society].filter((e) => e.title.toLowerCase().includes(query) || society.toLowerCase().includes(query));
+        if (list.length) acc[society] = list;
+        return acc;
+      }, {}),
+    [grouped, debouncedSearch]
+  );
+
+  const hasResults = Object.keys(filtered).length > 0;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-16 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <ShieldCheck className="text-indigo-600" size={20} />
-            <span className="bg-indigo-50 px-2 py-1 rounded-full text-indigo-700 font-bold uppercase tracking-widest text-xs shadow-sm">Secure Portal</span>
+    <div className="min-h-screen px-6 py-10" style={{ backgroundColor: COLORS.bg }}>
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-md px-3 py-1.5" style={{ backgroundColor: "rgba(29, 78, 216, 0.12)" }}>
+            <Sparkles size={14} style={{ color: COLORS.accent }} />
+            <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: COLORS.primary }}>Democratic Process</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight mb-8">Society Elections</h1>
+          <h1 className="mb-2 text-3xl font-bold" style={{ color: COLORS.text }}>Society Elections</h1>
+          <p className="max-w-2xl text-sm" style={{ color: COLORS.textMuted }}>Participate in student leadership elections. Apply for roles, cast your vote, or view results.</p>
+        </header>
+
+        <div className="mb-8">
+          <PublicSectionCard className="!p-3">
+            <PublicSearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search elections or societies..." />
+            {search ? <button onClick={() => setSearch("")} className="mt-2 text-xs font-medium" style={{ color: COLORS.accent }}>Clear</button> : null}
+          </PublicSectionCard>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence mode="popLayout">
-            {elections.map((election) => {
-              const start = formatDate(election.startDate);
-              const end = formatDate(election.endDate);
-              const statusInfo = statusMap[election.status];
-              return (
-                <motion.div
-                  layout
-                  key={election._id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white rounded-4xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
-                >
-                  <div className="flex justify-between mb-6">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-tighter uppercase ${statusInfo.color}`}>{statusInfo.label}</span>
-                    <Clock size={16} className="text-gray-300 transition-colors" />
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{election.title}</h3>
-
-                  <div className="space-y-4 mb-8 grow">
-                    <div className="flex items-center gap-2 text-gray-500 text-xs font-semibold">
-                      <Calendar size={14} className="text-indigo-600" /> {start} - {end}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {election.roles.map((r) => (
-                        <span key={r} className="text-[9px] font-bold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full uppercase">{r}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-auto">
-                    {election.status === "APPLICATIONS_OPEN" && (
-                      <button
-                        onClick={() => navigate(`/apply/${election._id}`)}
-                        className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-3xl font-bold text-sm uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
-                      >
-                        Apply Now
-                      </button>
-                    )}
-                    {election.status === "VOTING_SCHEDULED" && (
-                      <button disabled className="w-full py-4 bg-gray-200 text-gray-400 rounded-3xl font-bold text-sm uppercase tracking-widest">Voting Scheduled</button>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+        {loading ? <div className="py-16 text-center"><p className="text-sm" style={{ color: COLORS.textMuted }}>Loading elections...</p></div> : null}
+        {!loading && !hasResults ? <div className="rounded-xl border py-16 text-center" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}><div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: "rgba(29, 78, 216, 0.12)" }}><Users size={24} style={{ color: COLORS.primary }} /></div><h3 className="mb-2 text-base font-semibold" style={{ color: COLORS.text }}>No elections found</h3><p className="text-sm" style={{ color: COLORS.textMuted }}>{search ? "Try adjusting your search terms." : "Check back later for upcoming elections."}</p></div> : null}
+        {!loading && hasResults ? <div className="space-y-10">{Object.keys(filtered).map((society) => <section key={society}><div className="mb-5 flex items-center gap-3 border-b pb-3" style={{ borderBottom: `1px solid ${COLORS.borderLight}` }}><div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: "rgba(29, 78, 216, 0.12)" }}><Users size={18} style={{ color: COLORS.primary }} /></div><h2 className="text-xl font-semibold" style={{ color: COLORS.text }}>{society}</h2></div><div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">{filtered[society].map((e) => { const status = statusConfig[e.status] || statusConfig.COMPLETED; return <article key={e._id} className="overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-sm" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border, boxShadow: "0 1px 3px rgba(30, 64, 175, 0.06)" }}><div className="border-b p-5" style={{ borderColor: COLORS.borderLight }}><div className="mb-3 flex items-start justify-between gap-3"><h3 className="text-base font-semibold leading-tight" style={{ color: COLORS.text }}>{e.title}</h3><span className="whitespace-nowrap rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide" style={{ backgroundColor: status.bg, color: status.text, border: `1px solid ${status.border}` }}>{status.label}</span></div><p className="text-xs" style={{ color: COLORS.textMuted }}>{e.status === "APPLICATIONS_OPEN" ? "Apply for available roles" : e.status === "VOTING_LIVE" ? "Voting is now open" : e.status === "COMPLETED" ? "Results available" : "Election updates available"}</p></div><div className="space-y-4 p-5"><div className="flex items-center gap-2 text-xs" style={{ color: COLORS.textMuted }}><Calendar size={14} style={{ color: COLORS.accent }} /><span>{e.status === "APPLICATIONS_OPEN" ? `Apply by ${formatDate(e.applyDeadline)}` : `${formatDate(e.startDate)} -> ${formatDate(e.endDate)}`}</span></div></div><div className="p-5 pt-0"><button onClick={() => handleAction(e)} className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-white transition-colors" style={{ backgroundColor: COLORS.primary }}>{e.status === "APPLICATIONS_OPEN" ? "Apply Now" : e.status === "VOTING_LIVE" ? "Vote Now" : e.status === "COMPLETED" ? "View Results" : "View Details"} <ChevronRight size={12} /></button></div></article>; })}</div></section>)}</div> : null}
       </div>
     </div>
   );

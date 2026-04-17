@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 import CreatableSelect from "react-select/creatable";
 import { useAuth } from "../../../context/AuthContext";
-import API_BASE_URL from '../../../config/api.config';
+import API_BASE_URL, { uploadFileUrl } from '../../../config/api.config';
 
 function SocietyForm() {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ function SocietyForm() {
     shortName: "",
     advisor: "",
     membersCount: "",
-    status: "Active",
     email: "",
     phone: "",
     description: "",
@@ -43,7 +43,6 @@ function SocietyForm() {
             shortName: data.shortName || "",
             advisor: data.advisor || "",
             membersCount: data.membersCount || "",
-            status: data.status || "Active",
             email: data.email || "",
             phone: data.phone || "",
             description: data.description || "",
@@ -56,7 +55,7 @@ function SocietyForm() {
               .map(r => ({ value: r.name, label: r.name }));
             setRoles(filteredRoles);
           }
-          if (data.image) setPreview(`http://localhost:8000/uploads/${data.image}`);
+          if (data.image) setPreview(uploadFileUrl(data.image));
         })
         .catch(err => console.log(err));
     }
@@ -97,14 +96,22 @@ function SocietyForm() {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
         });
+        toast.success("Society updated successfully.");
       } else {
         await axios.post(`${API_BASE_URL}/societies/create`, data, {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
         });
+        if (String(user?.role || "").toLowerCase() === "manager") {
+          toast.success(
+            "Your society creation request has been received. It will be reviewed and activated by the administration after approval.",
+            { duration: 6500 }
+          );
+        } else {
+          toast.success("Society created successfully.");
+        }
       }
 
-      alert(`Society ${id ? "updated" : "created"} successfully.`);
       navigate("/manager/society");
     } catch (error) {
       console.error("Failed to save society:", error.response?.data?.message || error.message);
@@ -112,17 +119,17 @@ function SocietyForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center items-start p-6 font-sans">
-      <div className="bg-white border border-gray-200 shadow-sm w-full max-w-4xl p-10">
+    <div className="min-h-screen flex justify-center items-start p-6 font-sans">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl w-full max-w-4xl p-10">
         {/* Back Button */}
         <Link to="/manager/society">
-          <button className="flex items-center text-gray-600 hover:text-gray-900 mb-6 font-medium">
+          <button className="flex items-center text-[#4B5563] hover:text-[#3699FF] mb-6 font-medium">
             <IoArrowBack size={20} className="mr-2" /> Back
           </button>
         </Link>
 
         {/* Heading */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 tracking-tight">
+        <h1 className="text-3xl font-bold text-[#3699FF] mb-8 tracking-tight">
           {id ? "Edit Society / Club" : "Add New Society / Club"}
         </h1>
 
@@ -138,7 +145,7 @@ function SocietyForm() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Full Name"
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
                 required
               />
             </div>
@@ -150,7 +157,7 @@ function SocietyForm() {
                 value={formData.shortName}
                 onChange={handleChange}
                 placeholder="e.g. CSS"
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
               />
             </div>
           </div>
@@ -164,7 +171,7 @@ function SocietyForm() {
               value={formData.advisor}
               onChange={handleChange}
               placeholder="Advisor Name"
-              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
             />
           </div>
 
@@ -175,7 +182,7 @@ function SocietyForm() {
               type="text"
               value={user?.fullname || "Loading..."}
               readOnly
-              className="w-full border border-gray-300 px-4 py-2 bg-gray-100 cursor-not-allowed"
+              className="w-full border border-gray-200 px-4 py-2 bg-slate-100 cursor-not-allowed rounded-lg"
             />
             <p className="text-sm text-gray-500 mt-1">
               Logged-in user is automatically assigned as President.
@@ -197,31 +204,17 @@ function SocietyForm() {
             <p className="text-sm text-gray-500 mt-1">Add multiple roles for the society, excluding President.</p>
           </div>
 
-          {/* Members Count & Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-gray-800 mb-2 font-semibold">Members Count</label>
-              <input
-                type="number"
-                name="membersCount"
-                value={formData.membersCount}
-                onChange={handleChange}
-                placeholder="e.g. 100"
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-800 mb-2 font-semibold">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-            </div>
+          {/* Members Count */}
+          <div className="max-w-md">
+            <label className="block text-gray-800 mb-2 font-semibold">Members Count</label>
+            <input
+              type="number"
+              name="membersCount"
+              value={formData.membersCount}
+              onChange={handleChange}
+              placeholder="e.g. 100"
+              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
+            />
           </div>
 
           {/* Contact Details */}
@@ -234,7 +227,7 @@ function SocietyForm() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="example@university.edu"
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
               />
             </div>
             <div>
@@ -245,7 +238,7 @@ function SocietyForm() {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+923001234567"
-                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+                className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
               />
             </div>
           </div>
@@ -259,7 +252,7 @@ function SocietyForm() {
               onChange={handleChange}
               placeholder="Brief description about the society"
               rows={4}
-              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
             />
           </div>
 
@@ -271,7 +264,7 @@ function SocietyForm() {
               value={formData.joinPolicy}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 transition duration-150"
+              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
             >
               <option value="">-- Select Join Policy --</option>
               <option value="DEPARTMENT_ONLY">Only students from same department</option>
@@ -306,14 +299,14 @@ function SocietyForm() {
             <Link to="/manager/society">
               <button
                 type="button"
-                className="px-8 py-2 border border-gray-400 hover:bg-gray-100 transition font-medium"
+                className="px-8 py-2 border border-gray-300 hover:bg-gray-100 transition font-medium rounded-lg text-[#3699FF]"
               >
                 Cancel
               </button>
             </Link>
             <button
               type="submit"
-              className="px-8 py-2 bg-gray-900 text-white hover:bg-gray-800 transition font-medium"
+              className="px-8 py-2 bg-[#3699FF] text-white hover:brightness-110 transition font-medium rounded-lg shadow-md"
             >
               {id ? 'Update' : 'Save'}
             </button>

@@ -12,7 +12,7 @@ const candidateSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected"], // possible statuses
+    enum: ["pending", "approved", "inDispute","rejected"], // possible statuses
     default: "pending", // default status
     required: true,
   },
@@ -23,6 +23,11 @@ const candidateSchema = new mongoose.Schema({
   image: {
     type: String,
     required: true, // store the picture filename or URL
+  },
+  // 🔥 ADD THIS
+  reason: {
+    type: String,
+    default: "",
   },
 });
 
@@ -43,7 +48,17 @@ const voteSchema = new mongoose.Schema({
     required: true,
   },
 });
-
+const winnerSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    required: true,
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+});
 const electionSchema = new mongoose.Schema(
   {
     societyId: {
@@ -51,6 +66,7 @@ const electionSchema = new mongoose.Schema(
       ref: "Society",
       required: true,
     },
+    winners: [winnerSchema],
 
     title: {
       type: String,
@@ -85,7 +101,6 @@ const electionSchema = new mongoose.Schema(
 
     applyDeadline: {
       type: Date,
-      
     },
 
     startDate: {

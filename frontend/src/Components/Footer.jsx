@@ -31,8 +31,8 @@ function Footer() {
   const quickLinks = [
     { name: "Home", href: "/" },
     { name: "Societies", href: "/community" },
+    { name: "News", href: "/society-posts" },
     { name: "Events", href: "/events" },
-    { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
 
@@ -44,8 +44,8 @@ function Footer() {
   ];
 
   return (
-    <footer className="relative bg-gray-900 text-white overflow-hidden">
-      {/* Left-side shape */}
+    <footer className="relative overflow-hidden bg-[#0f172a] text-white">
+      {/* Left-side shape - Original image, unchanged */}
       <img
         src={shape}
         alt="Footer Decorative Shape"
@@ -66,33 +66,33 @@ function Footer() {
       </style>
 
 
-      <div className="relative max-w-7xl mx-auto px-10 md:px-12 lg:px-20 2xl:px-10 py-10">
+      <div className="relative mx-auto max-w-6xl px-6 py-10 md:px-8 lg:px-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
           {/* Brand Section */}
           <div className="space-y-4">
             <Link to="/" className="flex flex-col focus:outline-none">
               <h1 className="text-3xl md:text-4xl font-black flex items-center gap-1">
-                US<span className="text-blue-400">CMS</span>
+                US<span className="text-[#38bdf8]">CMS</span>
               </h1>
-              <div className="md:w-1/2 w-1/3 h-[2.5px] bg-blue-400/50 rounded-full mt-[-2px]" />
+              <div className="md:w-1/2 w-1/3 h-[2.5px] bg-[#38bdf8]/60 rounded-full mt-[-2px]" />
             </Link>
 
-            <p className="text-gray-200 text-sm leading-relaxed">
+            <p className="text-white/90 text-sm leading-relaxed">
               University Society & Event Management System to help students connect, participate, and grow through campus societies and events.
             </p>
 
-            <div className="space-y-1.5 text-gray-300 text-sm">
+            <div className="space-y-1.5 text-white/70 text-sm">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-400" />
+                <MapPin className="w-4 h-4 text-[#38bdf8]" />
                 University Campus, Main Building
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-blue-400" />
+                <Phone className="w-4 h-4 text-[#38bdf8]" />
                 +1 (555) 123-4567
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-400" />
+                <Mail className="w-4 h-4 text-[#38bdf8]" />
                 info@uscms.edu
               </div>
             </div>
@@ -103,7 +103,7 @@ function Footer() {
                   key={i}
                   href={social.href}
                   aria-label={social.label}
-                  className="p-2.5 rounded-full bg-white text-gray-700 hover:bg-blue-400 hover:text-white transition-all duration-300 shadow"
+                  className="p-2.5 rounded-full bg-white text-gray-700 hover:bg-[#38bdf8] hover:text-[#0f172a] transition-all duration-300 shadow"
                 >
                   <social.icon className="w-4 h-4" />
                 </a>
@@ -115,14 +115,14 @@ function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-3 relative inline-block">
               Quick Links
-              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-blue-400"></span>
+              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-[#38bdf8]"></span>
             </h3>
             <ul className="space-y-1.5">
               {quickLinks.map((link, i) => (
                 <li key={i}>
                   <a
                     href={link.href}
-                    className="text-gray-200 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    className="text-white/90 hover:text-[#D4A017] transition-colors duration-200 text-sm"
                   >
                     {link.name}
                   </a>
@@ -135,14 +135,14 @@ function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-3 relative inline-block">
               Resources
-              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-blue-400"></span>
+              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-[#D4A017]"></span>
             </h3>
             <ul className="space-y-1.5">
               {resources.map((link, i) => (
                 <li key={i}>
                   <a
                     href={link.href}
-                    className="text-gray-200 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    className="text-white/90 hover:text-[#D4A017] transition-colors duration-200 text-sm"
                   >
                     {link.name}
                   </a>
@@ -155,16 +155,16 @@ function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-3 relative inline-block">
               Stay Updated
-              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-blue-400"></span>
+              <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-[#D4A017]"></span>
             </h3>
-            <p className="text-gray-200 text-sm mb-2.5 leading-relaxed">
+            <p className="text-white/90 text-sm mb-2.5 leading-relaxed">
               Subscribe to get the latest news and updates about campus events and society activities.
             </p>
 
             {subscribed ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-2.5 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-                <span className="text-green-700 text-sm font-medium">Successfully subscribed!</span>
+              <div className="bg-[#D4A017]/15 border border-[#D4A017]/30 rounded-xl p-2.5 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#D4A017] shrink-0" />
+                <span className="text-white text-sm font-medium">Successfully subscribed!</span>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -173,12 +173,12 @@ function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white placeholder-gray-400 transition-all text-sm"
+                  className="w-full px-3 py-2 border border-white/20 rounded-xl focus:ring-2 focus:ring-[#D4A017] focus:border-transparent outline-none text-white placeholder-white/50 transition-all text-sm"
                 />
-                {error && <p className="text-red-500 text-xs">{error}</p>}
+                {error && <p className="text-red-400 text-xs">{error}</p>}
                 <button
                   onClick={handleSubscribe}
-                  className="w-full px-3 py-2 bg-btn text-white rounded-xl cursor-pointer hover:scale-105 hover:brightness-110 transition-all duration-300 shadow flex items-center justify-center gap-2 font-medium text-sm"
+                  className="w-full px-3 py-2 bg-[#D4A017] text-white rounded-xl cursor-pointer hover:scale-105 hover:brightness-110 transition-all duration-300 shadow flex items-center justify-center gap-2 font-medium text-sm"
                 >
                   <Send className="w-4 h-4" />
                   Subscribe
@@ -190,17 +190,17 @@ function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-white/20 pt-4">
+        <div className="border-t border-white/15 pt-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-            <p className="text-gray-300 text-sm text-center md:text-left">
+            <p className="text-white/70 text-sm text-center md:text-left">
               © {new Date().getFullYear()} USCMS. All rights reserved.
             </p>
-            <div className="flex items-center gap-3 text-gray-300 text-sm">
-              <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
+            <div className="flex items-center gap-3 text-white/70 text-sm">
+              <a href="#" className="hover:text-[#D4A017] transition-colors">Privacy Policy</a>
               <span>|</span>
-              <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-[#D4A017] transition-colors">Terms of Service</a>
               <span>|</span>
-              <a href="#" className="hover:text-blue-400 transition-colors">Cookie Policy</a>
+              <a href="#" className="hover:text-[#D4A017] transition-colors">Cookie Policy</a>
             </div>
           </div>
         </div>

@@ -31,6 +31,31 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "manager", "admin"],
     default: "user",
   },
+    // 🔥 New fields
+  profileImage: {
+    type: String,
+  },
+
+  studentCardFront: {
+    type: String,
+  },
+
+  studentCardBack: {
+    type: String,
+  },
+
+  isGraduated: {
+    type: Boolean,
+    default: false,
+  },
+  session: {
+  type: String,
+  required: function () {
+    return this.role === "user"; // only required for students
+  },
+  trim: true
+},
+
 }, { timestamps: true });
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

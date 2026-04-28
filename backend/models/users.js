@@ -49,12 +49,17 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
   session: {
-  type: String,
-  required: function () {
-    return this.role === "user"; // only required for students
+    type: String,
+    trim: true,
   },
-  trim: true
-},
+  sessionStart: {
+    type: String,
+    trim: true,
+  },
+  sessionEnd: {
+    type: String,
+    trim: true,
+  },
 
 }, { timestamps: true });
 

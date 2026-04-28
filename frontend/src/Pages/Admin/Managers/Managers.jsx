@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Plus, Building2, Users, Activity, Inbox, ArrowRight } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Pencil, Trash2, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../../config/api.config";
 import toast from "react-hot-toast";
-import { fetchAdminStats, fetchAdminUsers } from "../api/adminApi";
+import { fetchAdminUsers } from "../api/adminApi";
 import { adminKeys } from "../api/adminQueryKeys";
 import AdminPageHeader from "../components/AdminPageHeader";
 import AdminDeleteModal from "../components/AdminDeleteModal";
-import AdminKpiCard from "../components/AdminKpiCard";
 import { adminUi as a } from "../components/adminUi";
 
 function initials(name) {
@@ -34,12 +33,6 @@ export default function Managers() {
     staleTime: 60 * 1000,
   });
 
-  const { data: stats = null } = useQuery({
-    queryKey: adminKeys.stats(),
-    queryFn: fetchAdminStats,
-    staleTime: 2 * 60 * 1000,
-  });
-
   useEffect(() => {
     if (usersError) toast.error("Could not load managers");
   }, [usersError]);
@@ -53,17 +46,9 @@ export default function Managers() {
       setDeleteModal(false);
       setSelectedId(null);
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
-      queryClient.invalidateQueries({ queryKey: adminKeys.stats() });
     },
     onError: (e) => toast.error(e.response?.data?.message || "Delete failed"),
   });
-
-  const societyCoverage = useMemo(() => {
-    if (!stats || !stats.societies) return null;
-    const total = stats.societies;
-    const activeCt = stats.activeSocieties ?? 0;
-    return Math.round((activeCt / Math.max(total, 1)) * 100);
-  }, [stats]);
 
   const totalPages = Math.max(1, Math.ceil(managers.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -73,77 +58,23 @@ export default function Managers() {
     setPage(1);
   }, [managers.length]);
 
-  const badgeGreen = (text) => (
-    <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
-      {text}
-    </span>
-  );
-  const badgeOrange = (text) => (
-    <span className="inline-flex rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-900 ring-1 ring-orange-100">
-      {text}
-    </span>
-  );
-
   return (
     <div className={a.page}>
       <AdminPageHeader
-        variant="hero"
+        variant="default"
         title="Manage managers"
-        description="Oversee the administrative leads of your campus societies. Assign accounts, review coverage, and keep the directory current."
+        description="Keep manager accounts simple, clean, and up to date."
         actions={
           <button type="button" onClick={() => navigate("/admin/memberForm")} className={a.btnPrimary}>
-            <Plus size={20} />
-            Add new manager
+            <Plus size={18} />
+            Add manager
           </button>
         }
       />
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminKpiCard
-          icon={Users}
-          label="Total managers"
-          value={managers.length.toLocaleString()}
-          hint="Accounts with manager role"
-          badge={badgeGreen("Roster")}
-          iconClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-700"
-        />
-        <AdminKpiCard
-          icon={Activity}
-          label="Active directory"
-          value={managers.length.toLocaleString()}
-          hint="Real-time roster from live data"
-          badge={badgeGreen("Live")}
-          iconClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-sky-50 text-sky-700"
-        />
-        <AdminKpiCard
-          icon={Building2}
-          label="Society coverage"
-          value={societyCoverage != null ? `${societyCoverage}%` : "—"}
-          hint="Active societies vs total registry"
-          iconClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-violet-100 bg-violet-50 text-violet-700"
-        >
-          {societyCoverage != null ? (
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-all"
-                style={{ width: `${Math.min(100, societyCoverage)}%` }}
-              />
-            </div>
-          ) : null}
-        </AdminKpiCard>
-        <AdminKpiCard
-          icon={Inbox}
-          label="Pending join requests"
-          value={(stats?.pendingJoinRequests ?? 0).toLocaleString()}
-          hint="Requires manager review"
-          badge={(stats?.pendingJoinRequests ?? 0) > 0 ? badgeOrange("Review") : badgeGreen("Clear")}
-          iconClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-800"
-        />
-      </section>
-
       <div className={a.tableCard}>
         <div className={a.tableToolbar}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Directory</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Managers</p>
           <p className="text-xs text-slate-500">
             {managers.length} manager{managers.length === 1 ? "" : "s"} on file
           </p>
@@ -253,45 +184,6 @@ export default function Managers() {
           </div>
         ) : null}
       </div>
-
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className={`${a.insightCard} lg:col-span-3`}>
-          <span className={a.insightBadge}>Management insight</span>
-          <h2 className={`${a.insightTitle} mt-2`}>Empowering your leads for better engagement.</h2>
-          <p className={a.insightLead}>
-            Pair each society with a responsive manager account so approvals, events, and elections stay on schedule.
-          </p>
-        </div>
-        <div className={`${a.cardPadded} lg:col-span-2`}>
-          <h2 className="mb-3 text-sm font-semibold tracking-tight text-slate-900">Quick actions</h2>
-          <ul className="space-y-1">
-            <li>
-              <Link
-                to="/admin/users"
-                className="flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm transition hover:bg-slate-50"
-              >
-                <span>
-                  <span className="block font-medium text-slate-900">Bulk directory</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">Open all users</span>
-                </span>
-                <ArrowRight size={16} className="text-slate-300" />
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/admin/societies"
-                className="flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm transition hover:bg-slate-50"
-              >
-                <span>
-                  <span className="block font-medium text-slate-900">Society registry</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">Review leads &amp; status</span>
-                </span>
-                <ArrowRight size={16} className="text-slate-300" />
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </section>
 
       <AdminDeleteModal
         open={deleteModal}

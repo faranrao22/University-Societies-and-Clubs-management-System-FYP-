@@ -53,7 +53,12 @@ const JoinSocietyFormPage = () => {
 
       if (res.data.success) {
         toast.success("Application submitted successfully.");
-        navigate("/community");
+        setFormData({
+          reason: "",
+          skills: "",
+          experience: "",
+          availability: "",
+        });
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Unable to submit application. Please try again.";

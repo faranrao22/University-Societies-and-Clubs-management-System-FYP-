@@ -94,7 +94,10 @@ export default function AdminTopbar({ onOpenNav }) {
 
           <NotificationBell buttonClassName="rounded-full border border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50" />
 
-          <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50/90 py-1 pl-1 pr-2 sm:pr-3">
+          <Link
+            to="/admin/profile"
+            className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50/90 py-1 pl-1 pr-2 transition hover:border-indigo-200 hover:bg-indigo-50/60 sm:pr-3"
+          >
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white"
               aria-hidden
@@ -107,7 +110,7 @@ export default function AdminTopbar({ onOpenNav }) {
               </p>
               <p className="truncate text-[11px] font-medium text-slate-500">{user?.fullname || "—"}</p>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 

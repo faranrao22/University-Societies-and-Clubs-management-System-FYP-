@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CalendarDays, MapPin, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { Users, Calendar, MapPin, ArrowRight, Sparkles, Loader2, Eye } from "lucide-react";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL, { uploadFileUrl } from "../../config/api.config";
@@ -23,6 +23,7 @@ function fmtDate(value) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "Date TBA";
   return d.toLocaleString(undefined, {
+    weekday: "short",
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -86,7 +87,7 @@ export default function UpcomingEvents() {
             No events available right now.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
             {events.map((event, index) => (
               <motion.div
                 key={event._id || index}
@@ -95,46 +96,78 @@ export default function UpcomingEvents() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08 }}
               >
-                <Link to="/events" className="group block h-full">
+                <Link to={`/eventdetails/${event._id}`} className="group block h-full">
                   <article
-                    className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                    style={{ borderColor: COLORS.border }}
+                    className="flex h-full flex-col overflow-hidden rounded-md border bg-white transition-[border-color,box-shadow] duration-200 hover:border-[#1d4ed8]/35 hover:shadow-md"
+                    style={{
+                      borderColor: COLORS.border,
+                      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+                    }}
                   >
-                    <div className="relative h-52 overflow-hidden">
+                    <div className="relative h-32 overflow-hidden sm:h-36">
                       <img
                         src={uploadFileUrl(event.image) || PLACEHOLDER_IMG}
                         alt={event.title || "Event"}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                        onError={(e) => {
+                          e.target.src = PLACEHOLDER_IMG;
+                        }}
                       />
-                    </div>
-
-                    <div className="flex grow flex-col p-6">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.dark }}>
-                        {event.category || "Event"}
-                      </p>
-                      <h3
-                        className="mb-3 text-lg font-bold leading-tight transition-colors group-hover:text-[#D4A017]"
-                        style={{ color: COLORS.text }}
-                      >
-                        {event.title || "Untitled event"}
-                      </h3>
-                      <p className="mb-5 line-clamp-2 text-sm" style={{ color: COLORS.muted }}>
-                        {(event.description || "Join this upcoming campus event.")
-                          .replace(/<[^>]+>/g, " ")
-                          .replace(/\s+/g, " ")
-                          .trim()}
-                      </p>
-                      <div
-                        className="mt-auto flex items-center justify-between border-t pt-4 text-xs"
-                        style={{ borderColor: "rgba(75, 85, 99, 0.14)", color: COLORS.muted }}
-                      >
-                        <span className="inline-flex items-center gap-1.5">
-                          <CalendarDays size={14} /> {fmtDate(event.startDateTime)}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <MapPin size={14} /> {event.venue || "TBA"}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/55 via-transparent to-transparent" />
+                      <div className="absolute left-2 top-2 right-2 flex justify-start">
+                        <span
+                          className="rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                          style={{ backgroundColor: COLORS.gold, color: COLORS.dark }}
+                        >
+                          {event.category || "Event"}
                         </span>
                       </div>
+                    </div>
+
+                    <div className="flex grow flex-col p-3.5 sm:p-4">
+                      <h3 className="mb-1.5 text-sm font-bold leading-snug tracking-tight sm:text-[15px]" style={{ color: COLORS.text }}>
+                        {event.title || "Untitled event"}
+                      </h3>
+                      <div className="min-h-0 flex-grow" aria-hidden />
+
+                      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-dashed pt-2.5" style={{ borderColor: COLORS.border }}>
+                        <div
+                          className="flex min-w-0 max-w-full items-center gap-1 truncate text-[11px] font-semibold sm:text-xs"
+                          style={{ color: COLORS.muted }}
+                          title={event.organizer?.name || "Society"}
+                        >
+                          <Users size={13} style={{ color: COLORS.gold }} className="shrink-0" strokeWidth={2} />
+                          <span className="truncate">{event.organizer?.name || "Society"}</span>
+                        </div>
+                        <div
+                          className="flex min-w-0 max-w-full items-center gap-1 truncate text-[11px] font-semibold sm:text-xs"
+                          style={{ color: COLORS.muted }}
+                          title={event.venue}
+                        >
+                          <MapPin size={13} style={{ color: COLORS.gold }} className="shrink-0" strokeWidth={2} />
+                          <span className="truncate">{event.venue || "TBA"}</span>
+                        </div>
+                        <div
+                          className="flex min-w-0 max-w-full items-center gap-1 truncate text-[11px] font-semibold sm:text-xs"
+                          style={{ color: COLORS.muted }}
+                          title={fmtDate(event.startDateTime)}
+                        >
+                          <Calendar size={13} style={{ color: COLORS.gold }} className="shrink-0" strokeWidth={2} />
+                          <span className="truncate">{fmtDate(event.startDateTime)}</span>
+                        </div>
+                      </div>
+
+                      <span
+                        className="mt-auto flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-transparent py-2 text-xs font-semibold tracking-wide transition-colors duration-150 group-hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+                        style={{
+                          backgroundColor: COLORS.dark,
+                          color: "#fff",
+                        }}
+                      >
+                        <Eye size={14} strokeWidth={2.25} />
+                        View
+                        <ArrowRight size={13} className="opacity-90" strokeWidth={2.5} />
+                      </span>
                     </div>
                   </article>
                 </Link>

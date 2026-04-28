@@ -36,7 +36,8 @@ const emptyCreateForm = () => ({
   role: "user",
   rollNo: "",
   semester: "",
-  session: "",
+  sessionStart: "",
+  sessionEnd: "",
 });
 
 function initials(name) {
@@ -44,19 +45,6 @@ function initials(name) {
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
-}
-
-function fmtDate(d) {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "—";
-  }
 }
 
 const TABS = [
@@ -168,13 +156,18 @@ export default function AdminUsers() {
     if (createForm.role === "user") {
       payload.rollNo = createForm.rollNo.trim();
       payload.semester = createForm.semester.trim();
-      payload.session = createForm.session.trim();
+      payload.sessionStart = createForm.sessionStart.trim();
+      payload.sessionEnd = createForm.sessionEnd.trim();
+      if (payload.sessionEnd < payload.sessionStart) {
+        toast.error("Session end must be on or after session start");
+        return;
+      }
     }
     createUserMut.mutate(payload);
   };
 
   const exportCsv = () => {
-    const header = ["Full name", "Email", "Role", "Department", "Roll no.", "Joined"].join(",");
+    const header = ["Full name", "Email", "Role", "Department", "Roll no."].join(",");
     const rows = filtered.map((u) =>
       [
         `"${(u.fullname || "").replace(/"/g, '""')}"`,
@@ -182,7 +175,6 @@ export default function AdminUsers() {
         u.role,
         `"${(u.Department || "").replace(/"/g, '""')}"`,
         `"${(u.rollNo || "").replace(/"/g, '""')}"`,
-        u.createdAt ? new Date(u.createdAt).toISOString() : "",
       ].join(",")
     );
     const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -252,20 +244,19 @@ export default function AdminUsers() {
                 <th className={`${a.th} pl-5`}>Member</th>
                 <th className={a.th}>Role</th>
                 <th className={a.th}>Status</th>
-                <th className={a.th}>Joined</th>
                 <th className={`${a.th} w-12 pr-5 text-right`}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {usersLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center text-sm text-slate-500">
+                  <td colSpan={4} className="px-5 py-16 text-center text-sm text-slate-500">
                     Loading directory…
                   </td>
                 </tr>
               ) : slice.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center text-sm text-slate-500">
+                  <td colSpan={4} className="px-5 py-16 text-center text-sm text-slate-500">
                     No users match this view.
                   </td>
                 </tr>
@@ -324,7 +315,6 @@ export default function AdminUsers() {
                           {statusOk ? "Active" : "Away"}
                         </span>
                       </td>
-                      <td className={`${a.cell} text-slate-600`}>{fmtDate(u.createdAt)}</td>
                       <td className={`${a.cell} pr-5 text-right`}>
                         <AdminRowMenu
                           items={[
@@ -391,7 +381,7 @@ export default function AdminUsers() {
             </button>
             <h2 className={a.modalTitle}>Add user</h2>
             <p className={`${a.modalLead} mb-5`}>
-              Create a student, manager, or admin account. Students need roll number, semester, and session.
+              Create a student, manager, or admin account. Students need roll number, semester, and session dates (start and end).
             </p>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
@@ -473,13 +463,27 @@ export default function AdminUsers() {
                         className={a.input}
                       />
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className={a.label}>Session</label>
+                    <div>
+                      <label className={a.label}>Session start</label>
                       <input
+                        type="date"
                         required
-                        value={createForm.session}
-                        onChange={(e) => setCreateForm((f) => ({ ...f, session: e.target.value }))}
-                        placeholder="e.g. 2022-2026"
+                        min="1990-01-01"
+                        max={createForm.sessionEnd || "2050-12-31"}
+                        value={createForm.sessionStart}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, sessionStart: e.target.value }))}
+                        className={a.input}
+                      />
+                    </div>
+                    <div>
+                      <label className={a.label}>Session end</label>
+                      <input
+                        type="date"
+                        required
+                        min={createForm.sessionStart || "1990-01-01"}
+                        max="2050-12-31"
+                        value={createForm.sessionEnd}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, sessionEnd: e.target.value }))}
                         className={a.input}
                       />
                     </div>

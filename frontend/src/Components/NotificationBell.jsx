@@ -29,9 +29,6 @@ function hrefForNotification(n) {
   }
 }
 
-/**
- * @param {{ className?: string; buttonClassName?: string }} props
- */
 export default function NotificationBell({ className = "", buttonClassName = "" }) {
   const { items, unreadCount, markRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -51,8 +48,9 @@ export default function NotificationBell({ className = "", buttonClassName = "" 
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`relative rounded-lg p-2 transition hover:bg-black/5 ${buttonClassName}`}
+        className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5 md:h-auto md:w-auto md:p-2 ${buttonClassName}`}
         aria-label="Notifications"
+        aria-expanded={open}
       >
         <Bell className="h-5 w-5 text-gray-600" />
         {unreadCount > 0 && (
@@ -63,20 +61,26 @@ export default function NotificationBell({ className = "", buttonClassName = "" 
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,22rem)] rounded-xl border border-gray-200 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+        <div
+          className={`
+            z-[120] flex max-h-[min(calc(100vh-5.25rem),32rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl
+            max-md:fixed max-md:left-3 max-md:right-3 max-md:top-[4.75rem] max-md:w-auto
+            md:absolute md:right-0 md:mt-2 md:max-h-80 md:w-[min(100vw-2rem,22rem)]
+          `}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4">
             <span className="text-sm font-semibold text-gray-900">Notifications</span>
             {unreadCount > 0 && (
               <button
                 type="button"
-                className="text-xs font-medium text-indigo-700 hover:underline"
+                className="shrink-0 text-xs font-medium text-indigo-700 hover:underline"
                 onClick={() => markAllRead()}
               >
                 Mark all read
               </button>
             )}
           </div>
-          <div className="max-h-80 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {items.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-gray-500">No notifications yet</p>
             ) : (

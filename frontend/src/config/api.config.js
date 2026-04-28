@@ -15,7 +15,32 @@ export function uploadFileUrl(fileName) {
   const trimmed = fileName.trim();
   if (!trimmed) return null;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `${getUploadsBaseUrl()}/uploads/${encodeURIComponent(trimmed)}`;
+
+  const base = getUploadsBaseUrl();
+  const normalized = trimmed.replace(/\\/g, "/");
+
+  // Already an uploads path from API/db (e.g. "/uploads/x.png" or "uploads/x.png")
+  if (normalized.startsWith("/uploads/")) {
+    return `${base}${normalized}`;
+  }
+  if (normalized.startsWith("uploads/")) {
+    return `${base}/${normalized}`;
+  }
+  // Some responses may include "/api/uploads/..." – static files are served without "/api".
+  if (normalized.startsWith("/api/uploads/")) {
+    return `${base}${normalized.replace(/^\/api/, "")}`;
+  }
+  if (normalized.startsWith("api/uploads/")) {
+    return `${base}/${normalized.replace(/^api\//, "")}`;
+  }
+
+  // Plain filename (or nested segments): encode each segment safely.
+  const encodedPath = normalized
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  return `${base}/uploads/${encodedPath}`;
 }
 
 export default API_BASE_URL;

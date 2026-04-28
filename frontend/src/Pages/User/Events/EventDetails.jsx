@@ -10,20 +10,39 @@ import {
     Mic, Star, Users, ChevronDown,
 } from "lucide-react";
 
+/** Public event detail page tokens (aligned with societies / events lists) */
+const ED = {
+    dark: "#1e3a8a",
+    darkMid: "#1d4ed8",
+    gold: "#38bdf8",
+    cream: "#e2e8f0",
+    text: "#111827",
+    muted: "#4B5563",
+    border: "rgba(30, 64, 175, 0.16)",
+    surface: "#ffffff",
+    tint: "rgba(30, 64, 175, 0.06)",
+};
+
 /* ─── Person Card ─────────────────────────────────────────────────────────── */
 function PersonCard({ person }) {
     return (
-        <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shrink-0 select-none">
+        <div
+            className="flex items-start gap-3 rounded-md border bg-white p-3.5 transition-colors hover:border-[#1d4ed8]/25"
+            style={{ borderColor: ED.border }}
+        >
+            <div
+                className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-md text-sm font-bold text-white"
+                style={{ backgroundColor: ED.dark }}
+            >
                 {person.name?.charAt(0)?.toUpperCase() || "?"}
             </div>
             <div className="min-w-0">
-                <p className="font-bold text-slate-900 leading-tight">{person.name}</p>
+                <p className="text-sm font-semibold leading-snug" style={{ color: ED.text }}>{person.name}</p>
                 {person.designation && (
-                    <p className="text-xs text-blue-600 font-semibold mt-0.5">{person.designation}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold" style={{ color: ED.darkMid }}>{person.designation}</p>
                 )}
                 {person.bio && (
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">{person.bio}</p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: ED.muted }}>{person.bio}</p>
                 )}
             </div>
         </div>
@@ -35,13 +54,13 @@ function PeopleGroup({ label, icon: Icon, iconBg, iconColor, people }) {
     if (!people || people.length === 0) return null;
     return (
         <div>
-            <div className="flex items-center gap-2 mb-4">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${iconBg} ${iconColor}`}>
-                    <Icon size={15} />
+            <div className="mb-3 flex items-center gap-2">
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${iconBg} ${iconColor}`}>
+                    <Icon size={14} strokeWidth={2} />
                 </div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>{label}</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {people.map((p, i) => <PersonCard key={i} person={p} />)}
             </div>
         </div>
@@ -97,36 +116,48 @@ function ShareModal({ event, onClose }) {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 pb-6 sm:pb-0"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 px-4 pb-6 backdrop-blur-sm sm:items-center sm:pb-0"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-7 pt-7 pb-5 border-b border-slate-100">
-                    <div>
-                        <p className="font-black text-slate-900 text-lg">Share Event</p>
-                        <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[230px]">{title}</p>
+            <div className="w-full max-w-sm overflow-hidden rounded-xl border bg-white shadow-xl" style={{ borderColor: ED.border }}>
+                <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: ED.border }}>
+                    <div className="min-w-0 pr-2">
+                        <p className="text-base font-bold tracking-tight" style={{ color: ED.text }}>Share event</p>
+                        <p className="mt-0.5 truncate text-xs font-medium" style={{ color: ED.muted }}>{title}</p>
                     </div>
-                    <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white transition hover:bg-slate-50"
+                        style={{ borderColor: ED.border }}
+                        aria-label="Close"
+                    >
                         <X size={16} className="text-slate-600" />
                     </button>
                 </div>
-                <div className="px-7 pt-6 pb-3 grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 px-5 pt-5 pb-2">
                     {shareOptions.map((opt) => (
                         <button
                             key={opt.label}
+                            type="button"
                             onClick={() => opt.href ? window.open(opt.href, "_blank") : opt.action()}
-                            className={`flex flex-col items-center gap-2.5 py-5 rounded-2xl transition-colors ${opt.bg}`}
+                            className={`flex flex-col items-center gap-2 rounded-md border border-transparent py-4 transition-colors ${opt.bg}`}
                         >
-                            <opt.icon size={22} className={opt.color} />
-                            <span className="text-[11px] font-bold text-slate-700">{opt.label}</span>
+                            <opt.icon size={20} className={opt.color} strokeWidth={2} />
+                            <span className="text-[10px] font-semibold text-slate-700">{opt.label}</span>
                         </button>
                     ))}
                 </div>
-                <div className="px-7 pt-2 pb-7">
-                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
-                        <p className="text-xs text-slate-400 truncate flex-1 select-all">{url}</p>
-                        <button onClick={copyLink} className="shrink-0 flex items-center gap-1.5 text-xs font-black text-blue-600 hover:text-blue-800 uppercase tracking-wide">
-                            <Copy size={13} /> Copy
+                <div className="px-5 pb-5 pt-2">
+                    <div className="flex items-center gap-2 rounded-md border px-3 py-2.5" style={{ borderColor: ED.border, backgroundColor: ED.tint }}>
+                        <p className="min-w-0 flex-1 truncate select-all text-[11px] font-mono text-slate-600">{url}</p>
+                        <button
+                            type="button"
+                            onClick={copyLink}
+                            className="flex shrink-0 items-center gap-1 text-[11px] font-semibold uppercase tracking-wide hover:underline"
+                            style={{ color: ED.darkMid }}
+                        >
+                            <Copy size={12} strokeWidth={2.5} /> Copy
                         </button>
                     </div>
                 </div>
@@ -147,11 +178,12 @@ function SkillTag({ label, selected, onClick }) {
         <button
             type="button"
             onClick={onClick}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+            className="rounded-md border px-2.5 py-1.5 text-left text-[11px] font-semibold transition"
+            style={
                 selected
-                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600"
-            }`}
+                    ? { backgroundColor: ED.dark, color: "#fff", borderColor: ED.dark }
+                    : { backgroundColor: "#fff", color: ED.text, borderColor: ED.border }
+            }
         >
             {label}
         </button>
@@ -193,56 +225,81 @@ function VolunteerModal({ event, onClose, isSubmitting, onSubmit }) {
 
     const handleSubmit = () => {
         const e = validate();
-        if (Object.keys(e).length) { setErrors(e); return; }
+        if (Object.keys(e).length) {
+            setErrors(e);
+            const firstError = Object.values(e)[0];
+            if (firstError) toast.error(firstError);
+            return;
+        }
         onSubmit(form);
     };
 
+    const fieldClass = (err) =>
+        `w-full resize-none rounded-md border bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#1d4ed8] focus:ring-2 focus:ring-[rgba(29,78,216,0.12)] ${
+            err ? "border-red-300" : "border-slate-200"
+        }`;
+
+    const roleOptions =
+        Array.isArray(event?.volunteerRoles) && event.volunteerRoles.length > 0
+            ? event.volunteerRoles
+            : [
+                "Registration & Check-in",
+                "Stage & AV Support",
+                "Guest Relations",
+                "Photography / Videography",
+                "Social Media Coverage",
+                "Logistics & Setup",
+                "Security & Crowd Management",
+                "General Assistance",
+              ];
+
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 pb-0 sm:pb-6"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 px-4 pb-0 backdrop-blur-sm sm:items-center sm:pb-6"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border bg-white shadow-xl sm:rounded-xl" style={{ borderColor: ED.border }}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-7 pt-7 pb-5 border-b border-slate-100 shrink-0">
-                    <div>
-                        <p className="font-black text-slate-900 text-xl">Apply as Volunteer</p>
-                        <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[260px]">{event?.title}</p>
+                <div className="flex shrink-0 items-center justify-between border-b px-5 py-4" style={{ borderColor: ED.border }}>
+                    <div className="min-w-0 pr-2">
+                        <p className="text-lg font-bold tracking-tight" style={{ color: ED.text }}>Apply as volunteer</p>
+                        <p className="mt-0.5 truncate text-xs font-medium" style={{ color: ED.muted }}>{event?.title}</p>
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white transition hover:bg-slate-50"
+                        style={{ borderColor: ED.border }}
+                        aria-label="Close"
                     >
                         <X size={16} className="text-slate-600" />
                     </button>
                 </div>
 
                 {/* Scrollable Body */}
-                <div className="overflow-y-auto px-7 py-6 space-y-6 flex-1">
+                <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
 
                     {/* Motivation */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-                            Why do you want to volunteer? <span className="text-red-400">*</span>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>
+                            Why do you want to volunteer? <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             rows={3}
                             value={form.motivation}
                             onChange={(e) => set("motivation", e.target.value)}
                             placeholder="Share what motivates you to be part of this event..."
-                            className={`w-full resize-none px-4 py-3 rounded-2xl border text-sm text-slate-800 placeholder-slate-300 bg-slate-50 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${
-                                errors.motivation ? "border-red-300" : "border-slate-200"
-                            }`}
+                            className={fieldClass(errors.motivation)}
                         />
-                        {errors.motivation && <p className="text-xs text-red-500 mt-1 font-medium">{errors.motivation}</p>}
+                        {errors.motivation && <p className="mt-1 text-xs font-medium text-red-600">{errors.motivation}</p>}
                     </div>
 
                     {/* Skills */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-                            Your Skills <span className="text-red-400">*</span>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>
+                            Your skills <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                             {SKILL_OPTIONS.map((s) => (
                                 <SkillTag
                                     key={s}
@@ -252,77 +309,72 @@ function VolunteerModal({ event, onClose, isSubmitting, onSubmit }) {
                                 />
                             ))}
                         </div>
-                        {errors.skills && <p className="text-xs text-red-500 mt-2 font-medium">{errors.skills}</p>}
+                        {errors.skills && <p className="mt-2 text-xs font-medium text-red-600">{errors.skills}</p>}
                     </div>
 
                     {/* Preferred Role */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-                            Preferred Role <span className="text-red-400">*</span>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>
+                            Preferred role <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <select
                                 value={form.preferredRole}
                                 onChange={(e) => set("preferredRole", e.target.value)}
-                                className={`w-full appearance-none px-4 py-3 rounded-2xl border text-sm text-slate-800 bg-slate-50 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${
-                                    errors.preferredRole ? "border-red-300" : "border-slate-200"
-                                } ${!form.preferredRole ? "text-slate-400" : ""}`}
+                                className={`${fieldClass(errors.preferredRole)} appearance-none pr-10 ${!form.preferredRole ? "text-slate-400" : "text-slate-800"}`}
                             >
                                 <option value="" disabled>Select a role...</option>
-                                <option>Registration & Check-in</option>
-                                <option>Stage & AV Support</option>
-                                <option>Guest Relations</option>
-                                <option>Photography / Videography</option>
-                                <option>Social Media Coverage</option>
-                                <option>Logistics & Setup</option>
-                                <option>Security & Crowd Management</option>
-                                <option>General Assistance</option>
+                                {roleOptions.map((role) => (
+                                    <option key={role} value={role}>{role}</option>
+                                ))}
                             </select>
-                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         </div>
-                        {errors.preferredRole && <p className="text-xs text-red-500 mt-1 font-medium">{errors.preferredRole}</p>}
+                        {errors.preferredRole && <p className="mt-1 text-xs font-medium text-red-600">{errors.preferredRole}</p>}
                     </div>
 
                     {/* Availability */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-                            Your Availability <span className="text-red-400">*</span>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>
+                            Your availability <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             rows={2}
                             value={form.availability}
                             onChange={(e) => set("availability", e.target.value)}
                             placeholder="e.g. Full day, Morning only, Day before for setup..."
-                            className={`w-full resize-none px-4 py-3 rounded-2xl border text-sm text-slate-800 placeholder-slate-300 bg-slate-50 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${
-                                errors.availability ? "border-red-300" : "border-slate-200"
-                            }`}
+                            className={fieldClass(errors.availability)}
                         />
-                        {errors.availability && <p className="text-xs text-red-500 mt-1 font-medium">{errors.availability}</p>}
+                        {errors.availability && <p className="mt-1 text-xs font-medium text-red-600">{errors.availability}</p>}
                     </div>
 
                     {/* Notice */}
-                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                        <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                        <p className="text-xs text-blue-700 leading-relaxed font-medium">
+                    <div className="flex items-start gap-2.5 rounded-md border px-3 py-3" style={{ borderColor: ED.border, backgroundColor: ED.tint }}>
+                        <Info size={15} className="mt-0.5 shrink-0" style={{ color: ED.darkMid }} strokeWidth={2} />
+                        <p className="text-xs font-medium leading-relaxed" style={{ color: ED.text }}>
                             Your application will be reviewed by the organizers. You must be a member of the society to volunteer.
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-7 pb-7 pt-4 border-t border-slate-100 shrink-0 grid grid-cols-2 gap-3">
+                <div className="grid shrink-0 grid-cols-2 gap-2 border-t px-5 py-4" style={{ borderColor: ED.border }}>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full font-black transition-colors"
+                        className="rounded-md border bg-white py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        style={{ borderColor: ED.border }}
                     >
                         Cancel
                     </button>
                     <button
+                        type="button"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="py-4 bg-blue-600 hover:bg-slate-900 text-white rounded-full font-black shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-md py-3 text-sm font-semibold text-white transition hover:brightness-105 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ backgroundColor: ED.dark }}
                     >
-                        {isSubmitting ? "Submitting..." : "Submit Application"}
+                        {isSubmitting ? "Submitting…" : "Submit application"}
                     </button>
                 </div>
             </div>
@@ -426,13 +478,22 @@ function EventDetails() {
     );
 
     if (loading) return (
-        <div className="flex min-h-screen flex-col items-center justify-center public-theme" style={{ backgroundColor: "#e2e8f0" }}>
-            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#1e3a8a] border-t-transparent" />
-            <p className="text-sm font-medium text-gray-500">Loading event…</p>
+        <div className="public-theme flex min-h-screen flex-col items-center justify-center" style={{ backgroundColor: ED.cream }}>
+            <div
+                className="mb-3 h-9 w-9 animate-spin rounded-full border-2 border-solid border-slate-200"
+                style={{ borderTopColor: ED.dark }}
+            />
+            <p className="text-sm font-medium" style={{ color: ED.muted }}>Loading event…</p>
         </div>
     );
 
-    if (!event) return <div className="text-center mt-20 font-bold text-slate-800">Event not found</div>;
+    if (!event) {
+        return (
+            <div className="public-theme py-24 text-center text-sm font-semibold" style={{ backgroundColor: ED.cream, color: ED.text }}>
+                Event not found
+            </div>
+        );
+    }
 
     const eventImageUrl =
         uploadFileUrl(event.image) ||
@@ -440,132 +501,162 @@ function EventDetails() {
 
     const volState = volunteerApplyState(event, user);
 
+    const metaRows = [
+        {
+            key: "host",
+            icon: (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sm font-bold text-white" style={{ backgroundColor: ED.dark }}>
+                    {event.organizer?.name?.charAt(0) || "U"}
+                </div>
+            ),
+            label: "Hosted by",
+            value: event.organizer?.name || "Society",
+        },
+        {
+            key: "venue",
+            icon: (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700">
+                    <MapPin size={18} strokeWidth={2} />
+                </div>
+            ),
+            label: "Venue",
+            value: event.venue || "TBA",
+        },
+        {
+            key: "time",
+            icon: (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+                    <Clock size={18} strokeWidth={2} />
+                </div>
+            ),
+            label: "Starts",
+            value: formatTime(event.startDateTime),
+        },
+    ];
+
     return (
-        <div className="public-theme min-h-screen" style={{ backgroundColor: "#e2e8f0" }}>
-            <nav className="sticky top-0 z-40 border-b border-[rgba(30,64,175,0.14)] bg-white/90 px-4 py-3 backdrop-blur-md sm:px-6">
+        <div className="public-theme min-h-screen" style={{ backgroundColor: ED.cream }}>
+            <nav
+                className="sticky top-0 z-40 border-b bg-white/95 px-4 py-2.5 backdrop-blur-md sm:px-6"
+                style={{ borderColor: ED.border }}
+            >
                 <div className="mx-auto flex max-w-6xl items-center justify-between">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1e3a8a] transition hover:opacity-80"
+                        className="flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide transition hover:bg-slate-50"
+                        style={{ borderColor: ED.border, color: ED.dark }}
                     >
-                        <ArrowLeft size={18} /> <span>Back</span>
+                        <ArrowLeft size={16} strokeWidth={2.25} /> <span>Back</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => setIsShareModalOpen(true)}
-                        className="rounded-full bg-[#1e3a8a] p-2.5 text-white shadow-md transition hover:brightness-110 active:scale-95"
+                        className="flex h-10 w-10 items-center justify-center rounded-md text-white transition hover:brightness-110 active:brightness-95"
+                        style={{ backgroundColor: ED.dark }}
+                        aria-label="Share event"
                     >
-                        <Share2 size={18} />
+                        <Share2 size={17} strokeWidth={2} />
                     </button>
                 </div>
             </nav>
 
-            <div className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
-                <div className="flex flex-col items-start gap-10 lg:flex-row lg:gap-14">
-                    <div className="relative w-full lg:w-1/2">
+            <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+                    <div className="w-full lg:w-[46%] lg:max-w-xl lg:shrink-0">
                         <div
-                            className="pointer-events-none absolute -inset-2 rounded-[2rem] opacity-30 blur-2xl"
-                            style={{ background: "linear-gradient(135deg, #38bdf855, #1e3a8a44)" }}
-                        />
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border-4 border-white shadow-xl">
-                            <img src={eventImageUrl} className="h-full w-full object-cover" alt={event.title} />
+                            className="relative overflow-hidden rounded-md border bg-white shadow-sm"
+                            style={{ borderColor: ED.border, boxShadow: "0 1px 2px rgba(15, 23, 42, 0.05)" }}
+                        >
+                            <div className="aspect-[4/3]">
+                                <img src={eventImageUrl} className="h-full w-full object-cover" alt={event.title} />
+                            </div>
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/45 via-transparent to-transparent" />
                         </div>
                     </div>
 
-                    <div className="w-full lg:w-1/2 lg:pt-2">
-                        <div
-                            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white"
-                            style={{ backgroundColor: "#1d4ed8" }}
-                        >
-                            <Calendar size={12} /> {event.category || "Event"}
+                    <div className="min-w-0 flex-1 lg:pt-0">
+                        <div className="mb-3 inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: ED.gold, color: ED.dark }}>
+                            <Calendar size={11} strokeWidth={2.5} /> {event.category || "Event"}
                         </div>
-                        <h1 className="mb-8 text-3xl font-black leading-[1.12] tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
+                        <h1 className="mb-6 text-2xl font-bold leading-tight tracking-tight sm:text-3xl lg:text-[2rem]" style={{ color: ED.text }}>
                             {event.title}
                         </h1>
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4 rounded-2xl border border-[rgba(30,64,175,0.14)] bg-white/80 p-4">
-                                <div
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white"
-                                    style={{ backgroundColor: "#1e3a8a" }}
-                                >
-                                    {event.organizer?.name?.charAt(0) || "U"}
+                        <div
+                            className="divide-y overflow-hidden rounded-md border bg-white"
+                            style={{ borderColor: ED.border, boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)" }}
+                        >
+                            {metaRows.map((row) => (
+                                <div key={row.key} className="flex items-center gap-3 px-3.5 py-3 sm:px-4 sm:py-3.5">
+                                    {row.icon}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>{row.label}</p>
+                                        <p className="truncate text-sm font-semibold sm:text-[15px]" style={{ color: ED.text }}>{row.value}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Hosted by</p>
-                                    <p className="text-lg font-bold text-gray-900">{event.organizer?.name || "Society"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-2xl border border-[rgba(30,64,175,0.14)] bg-white/80 p-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-                                    <MapPin size={22} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Venue</p>
-                                    <p className="text-lg font-bold text-gray-900">{event.venue || "TBA"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-2xl border border-[rgba(30,64,175,0.14)] bg-white/80 p-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                                    <Clock size={22} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Starts</p>
-                                    <p className="text-lg font-bold text-gray-900">{formatTime(event.startDateTime)}</p>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <main className="mx-auto max-w-6xl px-4 pb-20 md:px-6">
-                <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
-                    <div className="space-y-8 lg:col-span-7">
-                        <div className="rounded-3xl border border-[rgba(30,64,175,0.14)] bg-white p-8 shadow-sm md:p-10">
-                            <h2 className="mb-6 text-xs font-black uppercase tracking-[0.2em] text-[#1d4ed8]">About this event</h2>
+            <main className="mx-auto max-w-6xl px-4 pb-16 md:px-6 md:pb-20">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+                    <div className="space-y-6 lg:col-span-7">
+                        <section
+                            className="rounded-md border bg-white p-5 sm:p-6"
+                            style={{ borderColor: ED.border, boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)" }}
+                        >
+                            <h2 className="mb-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.darkMid }}>About this event</h2>
                             <div
-                                className="prose prose-slate prose-lg max-w-none leading-relaxed text-gray-600 [&>p]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5"
+                                className="prose prose-slate max-w-none text-sm leading-relaxed prose-p:text-[15px] prose-p:leading-relaxed prose-headings:tracking-tight sm:prose-base [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5"
+                                style={{ color: ED.muted }}
                                 dangerouslySetInnerHTML={{ __html: event.description || "No description provided." }}
                             />
-                        </div>
+                        </section>
 
                         {hasPeople && (
-                            <div className="rounded-3xl border border-[rgba(30,64,175,0.14)] bg-white p-8 shadow-sm md:p-10">
-                                <h2 className="mb-8 text-xs font-black uppercase tracking-[0.2em] text-[#1d4ed8]">People</h2>
-                                <div className="space-y-10">
+                            <section
+                                className="rounded-md border bg-white p-5 sm:p-6"
+                                style={{ borderColor: ED.border, boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)" }}
+                            >
+                                <h2 className="mb-6 text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.darkMid }}>People</h2>
+                                <div className="space-y-8">
                                     <PeopleGroup label="Chief Guests" icon={Star} iconBg="bg-amber-50" iconColor="text-amber-600" people={event.chiefGuests} />
                                     <PeopleGroup label="Speakers" icon={Mic} iconBg="bg-emerald-50" iconColor="text-emerald-700" people={event.speakers} />
                                     <PeopleGroup label="Hosts" icon={Users} iconBg="bg-slate-100" iconColor="text-slate-700" people={event.hosts} />
                                 </div>
-                            </div>
+                            </section>
                         )}
                     </div>
 
                     <div className="lg:col-span-5">
-                        <div className="sticky top-24 rounded-3xl border border-[rgba(30,64,175,0.14)] bg-white p-8 shadow-lg">
-                            <div className="space-y-6">
+                        <div
+                            className="lg:sticky lg:top-20 rounded-md border bg-white p-5 sm:p-6"
+                            style={{ borderColor: ED.border, boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)" }}
+                        >
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="mb-3 block text-[10px] font-black uppercase tracking-widest text-gray-400">Schedule</label>
-                                    <div className="rounded-2xl border border-[rgba(30,64,175,0.12)] bg-[#eff6ff] p-5">
-                                        <p className="text-xl font-black text-gray-900">{formatDate(event.startDateTime)}</p>
-                                        <p className="mt-1 font-bold text-[#1e3a8a]">{formatTime(event.startDateTime)} onwards</p>
+                                    <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>Schedule</label>
+                                    <div className="rounded-md border px-4 py-3" style={{ borderColor: ED.border, backgroundColor: ED.tint }}>
+                                        <p className="text-base font-bold leading-snug sm:text-lg" style={{ color: ED.text }}>{formatDate(event.startDateTime)}</p>
+                                        <p className="mt-1 text-sm font-semibold" style={{ color: ED.dark }}>{formatTime(event.startDateTime)} onwards</p>
                                     </div>
                                 </div>
 
                                 {event.isVolunteerOpen ? (
-                                    <div className="space-y-4">
-                                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
-                                            <div className="flex items-start gap-3">
-                                                <Info size={18} className="mt-0.5 shrink-0 text-emerald-700" />
-                                                <p className="text-sm font-medium leading-snug text-emerald-900">
+                                    <div className="space-y-3">
+                                        <div className="rounded-md border border-emerald-200/80 bg-emerald-50/90 px-3.5 py-3">
+                                            <div className="flex items-start gap-2.5">
+                                                <Info size={16} className="mt-0.5 shrink-0 text-emerald-700" strokeWidth={2} />
+                                                <p className="text-xs font-medium leading-snug text-emerald-950 sm:text-sm">
                                                     Volunteer with this society&apos;s event. You must be a society member; managers approve roles.
                                                 </p>
                                             </div>
                                             {event.volunteerDeadline && (
-                                                <div className="mt-3 border-t border-emerald-100/80 pt-3">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Apply before</p>
-                                                    <p className="text-sm font-bold text-emerald-950">{formatDate(event.volunteerDeadline)}</p>
+                                                <div className="mt-3 border-t border-emerald-200/70 pt-3">
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Apply before</p>
+                                                    <p className="mt-0.5 text-sm font-semibold text-emerald-950">{formatDate(event.volunteerDeadline)}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -574,21 +665,21 @@ function EventDetails() {
                                             disabled={volState.disabled}
                                             title={volState.hint || undefined}
                                             onClick={() => !volState.disabled && setIsVolunteerModalOpen(true)}
-                                            className="w-full rounded-2xl py-4 text-base font-black text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-55 hover:brightness-105 active:scale-[0.99]"
+                                            className="w-full rounded-sm border border-transparent py-2.5 text-sm font-semibold tracking-wide transition disabled:cursor-not-allowed disabled:opacity-55 hover:brightness-105 active:brightness-95"
                                             style={{
-                                                backgroundColor: volState.disabled ? "#94a3b8" : "#1e3a8a",
-                                                boxShadow: volState.disabled ? "none" : "0 12px 30px rgba(30,64,175,0.25)",
+                                                backgroundColor: volState.disabled ? "#94a3b8" : ED.dark,
+                                                color: "#fff",
                                             }}
                                         >
                                             {volState.label}
                                         </button>
                                         {volState.disabled && volState.hint && (
-                                            <p className="text-center text-xs text-gray-500">{volState.hint}</p>
+                                            <p className="text-center text-xs font-medium" style={{ color: ED.muted }}>{volState.hint}</p>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-center gap-2 pt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                        <ExternalLink size={14} /> Volunteering closed
+                                    <div className="flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: ED.muted }}>
+                                        <ExternalLink size={14} strokeWidth={2} /> Volunteering closed
                                     </div>
                                 )}
                             </div>

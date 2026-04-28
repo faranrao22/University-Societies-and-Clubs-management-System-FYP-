@@ -1087,7 +1087,7 @@ const ADMIN_CREATABLE_ROLES = ["user", "manager", "admin"];
 
 const createUserByAdmin = async (req, res) => {
   try {
-    const { fullname, email, password, Department, role, rollNo, semester, session } = req.body;
+    const { fullname, email, password, Department, role, rollNo, semester, sessionStart, sessionEnd } = req.body;
 
     if (!fullname || !email || !password || !Department) {
       return res.status(400).json({
@@ -1119,15 +1119,25 @@ const createUserByAdmin = async (req, res) => {
     };
 
     if (userRole === "user") {
-      if (!rollNo || !semester || !session) {
+      const start = (sessionStart || "").trim();
+      const end = (sessionEnd || "").trim();
+      if (!rollNo || !semester || !start || !end) {
         return res.status(400).json({
           success: false,
-          message: "Roll number, semester and session are required for student accounts",
+          message: "Roll number, semester, session start and session end are required for student accounts",
+        });
+      }
+      if (end < start) {
+        return res.status(400).json({
+          success: false,
+          message: "Session end date must be on or after the session start date",
         });
       }
       userData.rollNo = rollNo;
       userData.semester = semester;
-      userData.session = session;
+      userData.sessionStart = start;
+      userData.sessionEnd = end;
+      userData.session = `${start} — ${end}`;
     }
 
     const created = await User.create(userData);

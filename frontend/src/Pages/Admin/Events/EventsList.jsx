@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../components/AdminPageHeader";
 import { adminUi as a } from "../components/adminUi";
@@ -41,55 +41,60 @@ export default function AdminEventsList() {
   return (
     <div className={a.pageNarrow}>
       <AdminPageHeader
-        variant="hero"
         title="Events"
-        description="All events in the system. Open one for full details and a downloadable report."
+        description="All events in the system."
       />
 
-      <div className={`${a.card} ${a.list}`}>
+      <div className={a.tableCard}>
         {isPending ? (
-          <div className={a.emptyState}>Loading events…</div>
+          <div className={a.emptyState}>Loading events...</div>
         ) : events.length === 0 ? (
           <div className={a.emptyState}>No events found.</div>
         ) : (
-          events.map((ev) => (
-            <button
-              key={ev._id}
-              type="button"
-              onClick={() => navigate(`/admin/events/${ev._id}`)}
-              className={a.listRowBtn}
-            >
-              <div className={a.iconTile}>
-                <CalendarDays size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-slate-900">{ev.title}</p>
-                <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-500">
-                  <span>{ev.organizer?.name || "Society"}</span>
-                  {ev.organizer?.shortName && (
-                    <span className="text-slate-400">({ev.organizer.shortName})</span>
-                  )}
-                  <span className="text-slate-300">·</span>
-                  <span>{ev.category || "—"}</span>
-                </p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-slate-600">
-                  <MapPin size={12} className="shrink-0" />
-                  <span className="truncate">{ev.venue || "—"}</span>
-                </p>
-                <p className="mt-1 text-[11px] text-slate-500">{formatRange(ev.startDateTime, ev.endDateTime)}</p>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                <span
-                  className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                    statusStyle[ev.status] || "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
-                  }`}
-                >
-                  {ev.status || "—"}
-                </span>
-                <ChevronRight className="text-slate-400" size={18} />
-              </div>
-            </button>
-          ))
+          <div className={a.tableScroll}>
+            <table className={a.table}>
+              <thead className={a.thead}>
+                <tr>
+                  <th className={`${a.th} pl-5`}>Event</th>
+                  <th className={a.th}>Society</th>
+                  <th className={a.th}>Venue</th>
+                  <th className={a.th}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((ev, idx) => (
+                  <tr
+                    key={ev._id}
+                    className={`${a.tbodyRowStriped(idx)} cursor-pointer`}
+                    onClick={() => navigate(`/admin/events/${ev._id}`)}
+                  >
+                    <td className={`${a.cellStrong} pl-5`}>
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
+                          <CalendarDays size={16} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{ev.title}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{formatRange(ev.startDateTime, ev.endDateTime)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={a.cell}>{ev.organizer?.name || "Society"}</td>
+                    <td className={a.cell}>{ev.venue || "-"}</td>
+                    <td className={a.cell}>
+                      <span
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                          statusStyle[ev.status] || "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+                        }`}
+                      >
+                        {ev.status || "-"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

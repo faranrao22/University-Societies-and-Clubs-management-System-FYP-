@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { 
   FaArrowRight, FaArrowLeft, FaUser, FaEnvelope, 
-  FaLock, FaIdCard, FaUniversity, FaCloudUploadAlt, FaCheckCircle, FaChevronDown 
+  FaLock, FaIdCard, FaUniversity, FaCloudUploadAlt, FaCheckCircle, FaChevronDown, FaCalendarAlt,
 } from "react-icons/fa";
 
 // 🔹 Sober Color Tokens
@@ -34,7 +35,7 @@ const DEPARTMENTS = [
 ];
 
 // 🔹 Sober FormField Component
-const FormField = ({ label, icon: Icon, name, value, onChange, type = "text", placeholder, required = false }) => (
+const FormField = ({ label, icon: Icon, name, value, onChange, type = "text", placeholder, required = false, min, max }) => (
   <div className="space-y-2">
     <label className="block text-xs font-medium uppercase tracking-wide ml-1" style={{ color: COLORS.textMuted }}>
       {label}
@@ -48,10 +49,12 @@ const FormField = ({ label, icon: Icon, name, value, onChange, type = "text", pl
         type={type}
         value={value}
         onChange={onChange}
-        placeholder={placeholder}
+        placeholder={type === "date" ? undefined : placeholder}
+        min={min}
+        max={max}
         required={required}
         autoComplete="off"
-        className="w-full h-11 pl-10 pr-4 rounded-lg text-sm outline-none transition-colors"
+        className={`w-full h-11 pl-10 rounded-lg text-sm outline-none transition-colors ${type === "date" ? "pr-3" : "pr-4"}`}
         style={{ 
           backgroundColor: COLORS.bg,
           border: `1px solid ${COLORS.border}`,
@@ -66,6 +69,7 @@ const FormField = ({ label, icon: Icon, name, value, onChange, type = "text", pl
 
 function SignupForm() {
   const { signup } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -77,7 +81,8 @@ function SignupForm() {
     rollNo: "",
     Department: "", 
     semester: "",
-    session: "",
+    sessionStart: "",
+    sessionEnd: "",
   });
 
   const [files, setFiles] = useState({
@@ -98,22 +103,37 @@ function SignupForm() {
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
+  const SESSION_MIN = "1990-01-01";
+  const SESSION_MAX = "2050-12-31";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    if (formData.sessionEnd && formData.sessionStart && formData.sessionEnd < formData.sessionStart) {
+      const msg = "Session end date must be on or after the session start date.";
+      toast.error(msg);
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = new FormData();
-      Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+      const payload = new FormData();
+      Object.keys(formData).forEach((key) => payload.append(key, formData[key]));
       Object.keys(files).forEach((key) => {
-        if (files[key]) data.append(key, files[key]);
+        if (files[key]) payload.append(key, files[key]);
       });
 
-      await signup(data);
-      alert("Signup successful! Please login.");
+      const res = await signup(payload);
+      toast.success(res?.message || "Account created successfully. Please sign in.");
+      navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please check your details.");
+      const msg =
+        err.response?.data?.message || "Registration failed. Please check your details.";
+      toast.error(msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -279,15 +299,30 @@ function SignupForm() {
                   </div>
                 </div>
 
-                <FormField 
-                  label="Session" 
-                  name="session" 
-                  value={formData.session} 
-                  onChange={handleChange} 
-                  required 
-                  icon={FaUniversity} 
-                  placeholder="2022-2026" 
-                />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField
+                    label="Session start"
+                    name="sessionStart"
+                    type="date"
+                    value={formData.sessionStart}
+                    onChange={handleChange}
+                    required
+                    icon={FaCalendarAlt}
+                    min={SESSION_MIN}
+                    max={formData.sessionEnd || SESSION_MAX}
+                  />
+                  <FormField
+                    label="Session end"
+                    name="sessionEnd"
+                    type="date"
+                    value={formData.sessionEnd}
+                    onChange={handleChange}
+                    required
+                    icon={FaCalendarAlt}
+                    min={formData.sessionStart || SESSION_MIN}
+                    max={SESSION_MAX}
+                  />
+                </div>
               </div>
             )}
 

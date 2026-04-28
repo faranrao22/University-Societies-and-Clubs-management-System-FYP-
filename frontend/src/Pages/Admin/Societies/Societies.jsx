@@ -19,15 +19,6 @@ function presidentUser(roles) {
   return roles?.find((r) => r.name === "President")?.user;
 }
 
-function fmtFounded(d) {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  } catch {
-    return "—";
-  }
-}
-
 function categoryLabel(s) {
   const raw = (s.department || s.shortName || "").trim();
   if (!raw) return "Campus";
@@ -79,9 +70,9 @@ export default function Societies() {
   return (
     <div className={a.page}>
       <AdminPageHeader
-        variant="hero"
-        title="Registry"
-        description="Societies and clubs with category, lead manager, and activation status. Open a row for full detail, members, and exports."
+        variant="default"
+        title="Societies"
+        description="Simple directory of societies and their current status."
       />
 
       <div className={a.tableCard}>
@@ -109,8 +100,7 @@ export default function Societies() {
             <thead className={a.thead}>
               <tr>
                 <th className={`${a.th} pl-5`}>Society / club</th>
-                <th className={a.th}>Category</th>
-                <th className={a.th}>Lead manager</th>
+                <th className={a.th}>Department</th>
                 <th className={a.th}>Status</th>
                 <th className={`${a.th} w-12 pr-5 text-right`}>Actions</th>
               </tr>
@@ -118,7 +108,7 @@ export default function Societies() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center text-sm text-slate-500">
+                  <td colSpan={4} className="px-5 py-16 text-center text-sm text-slate-500">
                     <Building2 className="mx-auto mb-2 text-slate-300" size={36} strokeWidth={1.25} />
                     No societies match this filter.
                   </td>
@@ -126,7 +116,6 @@ export default function Societies() {
               ) : (
                 filtered.map((s, idx) => {
                   const img = uploadFileUrl(s.image);
-                  const pres = presidentUser(s.roles);
                   const active = s.status === "Active";
                   return (
                     <tr
@@ -147,22 +136,12 @@ export default function Societies() {
                           </div>
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-slate-900">{s.name}</p>
-                            <p className="text-xs text-slate-500">Founded {fmtFounded(s.createdAt)}</p>
+                            {s.shortName ? <p className="text-xs text-slate-500">{s.shortName}</p> : null}
                           </div>
                         </div>
                       </td>
                       <td className={a.cell}>
-                        <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-900 ring-1 ring-indigo-100">
-                          {categoryLabel(s)}
-                        </span>
-                      </td>
-                      <td className={a.cell}>
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600">
-                            {pres?.fullname ? pres.fullname.slice(0, 2).toUpperCase() : "—"}
-                          </div>
-                          <span className="truncate text-sm font-medium text-slate-800">{presidentName(s.roles)}</span>
-                        </div>
+                        <span className="text-sm text-slate-700">{categoryLabel(s)}</span>
                       </td>
                       <td className={a.cell}>
                         <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide">

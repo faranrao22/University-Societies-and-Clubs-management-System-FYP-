@@ -1,8 +1,5 @@
 import React from "react";
 
-/**
- * @param {{ value: string; onChange: (id: string) => void; tabs: { id: string; label: string }[] }} props
- */
 export default function AdminPillTabs({ value, onChange, tabs }) {
   return (
     <div

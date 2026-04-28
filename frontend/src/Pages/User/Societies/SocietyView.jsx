@@ -149,8 +149,8 @@ export default function SocietyView() {
         </p>
         <Link
           to="/community"
-          className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-          style={{ backgroundColor: COLORS.dark }}
+          className="inline-flex items-center gap-2 rounded-md border bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-slate-50"
+          style={{ borderColor: COLORS.border, color: COLORS.dark }}
         >
           <ArrowLeft size={16} /> Back to societies
         </Link>
@@ -158,80 +158,148 @@ export default function SocietyView() {
     );
   }
 
+  const cardShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
+  const societyImageRaw =
+    typeof society.image === "string" ? society.image.trim() : society.image?.url || society.image?.path || "";
+  const heroImageUrl = uploadFileUrl(societyImageRaw) || FALLBACK_IMG;
+
   return (
-    <div className="min-h-screen pb-32 md:pb-16" style={{ backgroundColor: COLORS.cream }}>
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="mb-8 rounded-2xl border bg-white p-5 shadow-sm sm:p-6" style={{ borderColor: COLORS.border }}>
+    <div className="min-h-screen pb-20 md:pb-16" style={{ backgroundColor: COLORS.cream }}>
+      <header
+        className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-md"
+        style={{ borderColor: COLORS.border }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
           <button
             type="button"
             onClick={() => navigate("/community")}
-            className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"
-            style={{ color: COLORS.dark }}
+            className="flex shrink-0 items-center gap-2 rounded-md border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide transition hover:bg-slate-50"
+            style={{ borderColor: COLORS.border, color: COLORS.dark }}
           >
-            <ArrowLeft size={18} />
-            All societies
+            <ArrowLeft size={16} strokeWidth={2.25} />
+            Societies
           </button>
-          <h1 className="mt-3 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">{society.name}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2.5 text-sm">
-            {society.department ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-semibold" style={{ borderColor: COLORS.border, color: COLORS.muted }}>
-                <MapPin size={15} />
-                {society.department}
+          <h1 className="min-w-0 flex-1 truncate text-left text-sm font-bold tracking-tight sm:text-base" style={{ color: COLORS.text }}>
+            {society.name}
+          </h1>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full lg:w-[44%] lg:max-w-xl lg:shrink-0"
+          >
+            <div
+              className="relative overflow-hidden rounded-md border bg-white"
+              style={{ borderColor: COLORS.border, boxShadow: cardShadow }}
+            >
+              <div className="aspect-[4/3] bg-slate-100">
+                <img
+                  src={heroImageUrl}
+                  alt={society.name}
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = FALLBACK_IMG;
+                  }}
+                />
+              </div>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/50 via-transparent to-transparent" />
+              <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+                <span
+                  className="rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                  style={{ backgroundColor: COLORS.gold, color: COLORS.dark }}
+                >
+                  {society.joinPolicy || "Open"}
+                </span>
+                {society.status ? (
+                  <span
+                    className="rounded border bg-white/95 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide backdrop-blur-sm"
+                    style={{ borderColor: COLORS.border, color: COLORS.muted }}
+                  >
+                    {society.status}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <h2 className="mt-1 hidden text-2xl font-bold leading-tight tracking-tight lg:block xl:text-3xl" style={{ color: COLORS.text }}>
+              {society.name}
+            </h2>
+            <p className="text-[10px] font-bold uppercase tracking-wider lg:hidden" style={{ color: COLORS.muted }}>
+              Overview
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 lg:mt-3">
+              {society.department ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1 text-[11px] font-semibold"
+                  style={{ borderColor: COLORS.border, color: COLORS.muted }}
+                >
+                  <MapPin size={13} strokeWidth={2} className="shrink-0" style={{ color: COLORS.gold }} />
+                  {society.department}
+                </span>
+              ) : null}
+              <span className="text-[11px] font-semibold" style={{ color: COLORS.muted }}>
+                {society.members?.length ?? 0} members
               </span>
-            ) : null}
-            <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white" style={{ backgroundColor: COLORS.lightGreen }}>
-              {society.joinPolicy || "Open"}
-            </span>
-            {society.status ? (
-              <span className="rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ borderColor: COLORS.border, color: COLORS.muted }}>
-                {society.status}
-              </span>
-            ) : null}
+            </div>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed sm:text-[15px] lg:mt-4" style={{ color: COLORS.muted }}>
+              {stripHtmlSnippet(society.description, 220) ||
+                "Connect with members, join events, and grow skills alongside peers who share your interests."}
+            </p>
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-12">
-          <div className="space-y-8 lg:col-span-8">
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-8">
             <motion.section
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm"
-              style={{ borderColor: COLORS.border }}
+              transition={{ delay: 0.05 }}
+              className="rounded-md border bg-white p-5 sm:p-6"
+              style={{ borderColor: COLORS.border, boxShadow: cardShadow }}
             >
-              <h2 className="text-sm font-bold uppercase tracking-widest" style={{ color: COLORS.lightGreen }}>
+              <h2 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.lightGreen }}>
                 About
               </h2>
-              <p className="mt-3 text-base leading-relaxed sm:text-lg" style={{ color: COLORS.muted }}>
+              <p className="mt-3 text-sm leading-relaxed sm:text-[15px]" style={{ color: COLORS.muted }}>
                 {society.description ||
                   "This society welcomes students who want to connect, learn, and take part in campus life."}
               </p>
             </motion.section>
 
             <section>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-lg font-black text-gray-900">
-                  <Newspaper size={22} style={{ color: COLORS.dark }} />
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-base font-bold tracking-tight" style={{ color: COLORS.text }}>
+                  <Newspaper size={18} strokeWidth={2} style={{ color: COLORS.dark }} />
                   Updates &amp; posts
                 </h2>
                 <Link
                   to="/society-posts"
-                  className="text-xs font-bold uppercase tracking-wide hover:underline"
-                  style={{ color: COLORS.gold }}
+                  className="text-[10px] font-bold uppercase tracking-wider hover:underline"
+                  style={{ color: COLORS.dark }}
                 >
-                  All campus news
+                  All news
                 </Link>
               </div>
               {extrasLoading ? (
-                <p className="text-sm text-gray-500">Loading posts…</p>
+                <p className="text-sm font-medium" style={{ color: COLORS.muted }}>Loading posts…</p>
               ) : posts.length === 0 ? (
                 <div
-                  className="rounded-2xl border border-dashed p-8 text-center text-sm text-gray-500"
-                  style={{ borderColor: COLORS.border, backgroundColor: "rgba(255,255,255,0.7)" }}
+                  className="rounded-md border border-dashed p-8 text-center text-sm"
+                  style={{ borderColor: COLORS.border, color: COLORS.muted, backgroundColor: "rgba(255,255,255,0.85)" }}
                 >
                   No posts yet. Check back soon for society announcements.
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {posts.map((p) => (
                     <SocietyPostCard key={p._id} post={p} showSociety={false} />
                   ))}
@@ -239,56 +307,69 @@ export default function SocietyView() {
               )}
             </section>
 
-            <section className="space-y-10">
+            <section className="space-y-8">
               <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="flex items-center gap-2 text-lg font-black text-gray-900">
-                    <Calendar size={22} style={{ color: COLORS.dark }} />
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h2 className="flex items-center gap-2 text-base font-bold tracking-tight" style={{ color: COLORS.text }}>
+                    <Calendar size={18} strokeWidth={2} style={{ color: COLORS.dark }} />
                     Upcoming events
                   </h2>
-                  <Link to="/events" className="text-sm font-bold uppercase tracking-wide hover:underline" style={{ color: COLORS.gold }}>
-                    Browse all events
+                  <Link
+                    to="/events"
+                    className="text-[10px] font-bold uppercase tracking-wider hover:underline"
+                    style={{ color: COLORS.dark }}
+                  >
+                    All events
                   </Link>
                 </div>
                 {extrasLoading ? (
-                  <p className="text-sm text-gray-500">Loading events…</p>
+                  <p className="text-sm font-medium" style={{ color: COLORS.muted }}>Loading events…</p>
                 ) : upcomingEvents.length === 0 ? (
                   <div
-                    className="rounded-2xl border border-dashed p-8 text-center text-sm text-gray-500"
-                    style={{ borderColor: COLORS.border, backgroundColor: "rgba(255,255,255,0.7)" }}
+                    className="rounded-md border border-dashed p-8 text-center text-sm"
+                    style={{ borderColor: COLORS.border, color: COLORS.muted, backgroundColor: "rgba(255,255,255,0.85)" }}
                   >
                     No upcoming events for this society.
                   </div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                     {upcomingEvents.map((ev) => (
                       <Link
                         key={ev._id}
                         to={`/eventdetails/${ev._id}`}
-                        className="group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md"
-                        style={{ borderColor: COLORS.border }}
+                        className="group flex flex-col overflow-hidden rounded-md border bg-white transition-[border-color,box-shadow] duration-200 hover:border-[#1d4ed8]/35 hover:shadow-md"
+                        style={{ borderColor: COLORS.border, boxShadow: cardShadow }}
                       >
                         <div className="aspect-[2/1] overflow-hidden bg-slate-100">
                           <img
                             src={uploadFileUrl(ev.image) || FALLBACK_IMG}
                             alt=""
-                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                            className="h-full w-full object-cover transition duration-300 ease-out group-hover:scale-[1.02]"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_IMG;
+                            }}
                           />
                         </div>
-                        <div className="flex flex-1 flex-col p-4">
-                          <span className="mb-1 w-fit rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" style={{ backgroundColor: COLORS.lightGreen }}>
+                        <div className="flex flex-1 flex-col p-3.5">
+                          <span
+                            className="mb-1.5 w-fit rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                            style={{ backgroundColor: COLORS.gold, color: COLORS.dark }}
+                          >
                             {ev.category || "Event"}
                           </span>
-                          <p className="font-bold text-gray-900 line-clamp-2 group-hover:text-[#B8860B]">{ev.title}</p>
-                          <p className="mt-2 text-xs font-medium" style={{ color: COLORS.muted }}>
+                          <p className="line-clamp-2 text-sm font-bold leading-snug group-hover:opacity-90" style={{ color: COLORS.text }}>
+                            {ev.title}
+                          </p>
+                          <p className="mt-2 text-[11px] font-semibold" style={{ color: COLORS.muted }}>
                             {fmtRange(ev.startDateTime, ev.endDateTime)}
                           </p>
-                          <p className="mt-1 text-xs line-clamp-1" style={{ color: COLORS.muted }}>
-                            <MapPin className="mr-1 inline size-3" style={{ color: COLORS.gold }} />
+                          <p className="mt-1 line-clamp-1 text-[11px] font-medium" style={{ color: COLORS.muted }}>
+                            <MapPin className="mr-1 inline size-3 shrink-0 align-middle" style={{ color: COLORS.gold }} />
                             {ev.venue || "Venue TBA"}
                           </p>
-                          <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold" style={{ color: COLORS.dark }}>
-                            Open details <ChevronRight size={14} />
+                          <span className="mt-auto inline-flex items-center gap-0.5 pt-2.5 text-[11px] font-semibold" style={{ color: COLORS.dark }}>
+                            Details <ChevronRight size={14} strokeWidth={2.5} />
                           </span>
                         </div>
                       </Link>
@@ -298,19 +379,21 @@ export default function SocietyView() {
               </div>
 
               <div>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-gray-900">
-                  <Calendar size={22} className="text-gray-400" />
+                <h2 className="mb-3 flex flex-wrap items-center gap-2 text-base font-bold tracking-tight" style={{ color: COLORS.text }}>
+                  <Calendar size={18} strokeWidth={2} className="text-slate-400" />
                   Past events
-                  <span className="text-xs font-normal normal-case text-gray-500">(archive — not clickable)</span>
+                  <span className="text-xs font-normal normal-case" style={{ color: COLORS.muted }}>
+                    (archive — not clickable)
+                  </span>
                 </h2>
                 {extrasLoading ? null : pastEvents.length === 0 ? (
-                  <p className="text-sm text-gray-500">No past events to show yet.</p>
+                  <p className="text-sm font-medium" style={{ color: COLORS.muted }}>No past events to show yet.</p>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                     {pastEvents.map((ev) => (
                       <div
                         key={ev._id}
-                        className="flex flex-col overflow-hidden rounded-2xl border border-dashed bg-gray-50/80 opacity-95"
+                        className="flex flex-col overflow-hidden rounded-md border border-dashed bg-slate-50/90"
                         style={{ borderColor: COLORS.border }}
                       >
                         <div className="relative aspect-[2/1] overflow-hidden bg-slate-200">
@@ -318,24 +401,28 @@ export default function SocietyView() {
                             src={uploadFileUrl(ev.image) || FALLBACK_IMG}
                             alt=""
                             className="h-full w-full object-cover grayscale-[0.35]"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_IMG;
+                            }}
                           />
-                          <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                             Past
                           </span>
                         </div>
-                        <div className="flex flex-1 flex-col p-4">
-                          <p className="font-bold text-gray-800 line-clamp-2">{ev.title}</p>
-                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        <div className="flex flex-1 flex-col p-3.5">
+                          <p className="line-clamp-2 text-sm font-bold" style={{ color: COLORS.text }}>{ev.title}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: COLORS.muted }}>
                             {ev.status ? `Status: ${ev.status}` : "Ended"}
                           </p>
-                          <p className="mt-2 text-sm" style={{ color: COLORS.muted }}>
+                          <p className="mt-2 text-xs font-medium" style={{ color: COLORS.muted }}>
                             {fmtRange(ev.startDateTime, ev.endDateTime)}
                           </p>
-                          <p className="mt-1 text-sm" style={{ color: COLORS.muted }}>
-                            <MapPin className="mr-1 inline size-3 shrink-0" style={{ color: COLORS.gold }} />
+                          <p className="mt-1 text-xs font-medium" style={{ color: COLORS.muted }}>
+                            <MapPin className="mr-1 inline size-3 shrink-0 align-middle" style={{ color: COLORS.gold }} />
                             {ev.venue || "—"}
                           </p>
-                          <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-3">
+                          <p className="mt-2 line-clamp-3 text-xs leading-relaxed" style={{ color: COLORS.muted }}>
                             {stripHtmlSnippet(ev.description, 180)}
                           </p>
                         </div>
@@ -347,50 +434,52 @@ export default function SocietyView() {
             </section>
           </div>
 
-          <aside className="space-y-5 lg:col-span-4">
+          <aside className="space-y-4 lg:col-span-4">
             <div
-              className="rounded-2xl border bg-white p-5 shadow-sm"
-              style={{ borderColor: COLORS.border }}
+              className="rounded-md border bg-white p-5"
+              style={{ borderColor: COLORS.border, boxShadow: cardShadow }}
             >
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">At a glance</h3>
-              <div className="mt-4 space-y-4">
-                <div className="flex gap-3 rounded-xl border p-3" style={{ borderColor: COLORS.border, backgroundColor: "#e2e8f0" }}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: COLORS.dark }}>
-                    <UserCircle size={20} />
+              <h3 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.muted }}>
+                At a glance
+              </h3>
+              <div className="mt-4 divide-y" style={{ borderColor: COLORS.border }}>
+                <div className="flex gap-3 py-3 first:pt-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white" style={{ backgroundColor: COLORS.dark }}>
+                    <UserCircle size={18} strokeWidth={2} />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">President</p>
-                    <p className="text-sm font-semibold text-gray-900">{presidentName}</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.muted }}>President</p>
+                    <p className="truncate text-sm font-semibold" style={{ color: COLORS.text }}>{presidentName}</p>
                   </div>
                 </div>
-                <div className="flex gap-3 rounded-xl border p-3" style={{ borderColor: COLORS.border, backgroundColor: "#e2e8f0" }}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: COLORS.dark }}>
-                    <Users size={20} />
+                <div className="flex gap-3 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white" style={{ backgroundColor: COLORS.dark }}>
+                    <Users size={18} strokeWidth={2} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Members</p>
-                    <p className="text-sm font-semibold text-gray-900">{society.members?.length ?? 0}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.muted }}>Members</p>
+                    <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{society.members?.length ?? 0}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {(society.advisor || society.email || society.phone) && (
-              <div className="rounded-2xl border bg-white p-5 shadow-sm" style={{ borderColor: COLORS.border }}>
-                <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500">
-                  <Shield size={14} className="text-[#1B4D28]" />
+              <div className="rounded-md border bg-white p-5" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+                <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.muted }}>
+                  <Shield size={14} strokeWidth={2} style={{ color: COLORS.dark }} />
                   Contact
                 </h3>
-                <ul className="mt-4 space-y-3 text-sm" style={{ color: COLORS.muted }}>
+                <ul className="mt-3 space-y-2.5 text-sm" style={{ color: COLORS.muted }}>
                   {society.advisor && (
                     <li>
-                      <span className="font-semibold text-gray-800">Advisor: </span>
+                      <span className="font-semibold" style={{ color: COLORS.text }}>Advisor: </span>
                       {society.advisor}
                     </li>
                   )}
                   {society.email && (
                     <li className="flex flex-wrap items-center gap-2">
-                      <Mail size={16} style={{ color: COLORS.gold }} />
+                      <Mail size={15} strokeWidth={2} style={{ color: COLORS.gold }} />
                       <a href={`mailto:${society.email}`} className="font-medium underline-offset-2 hover:underline" style={{ color: COLORS.dark }}>
                         {society.email}
                       </a>
@@ -398,7 +487,7 @@ export default function SocietyView() {
                   )}
                   {society.phone && (
                     <li className="flex items-center gap-2">
-                      <Phone size={16} style={{ color: COLORS.gold }} />
+                      <Phone size={15} strokeWidth={2} style={{ color: COLORS.gold }} />
                       <a href={`tel:${society.phone}`} className="font-medium underline-offset-2 hover:underline" style={{ color: COLORS.dark }}>
                         {society.phone}
                       </a>
@@ -409,19 +498,16 @@ export default function SocietyView() {
             )}
 
             <div
-              className="rounded-2xl border p-5 shadow-md"
-              style={{
-                borderColor: COLORS.border,
-                background: `linear-gradient(145deg, ${COLORS.dark}, ${COLORS.lightGreen})`,
-              }}
+              className="rounded-md border p-5"
+              style={{ borderColor: COLORS.border, backgroundColor: COLORS.dark, boxShadow: cardShadow }}
             >
               <p className="text-sm font-medium text-white/90">Want to join this community?</p>
               <button
                 type="button"
                 onClick={() => navigate(`/join-society/${society._id}`)}
-                className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-bold text-[#1B4D28] shadow transition hover:brightness-95"
+                className="mt-3 w-full rounded-sm border border-transparent bg-white py-2.5 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-slate-100"
               >
-                Join society now
+                Join society
               </button>
             </div>
           </aside>

@@ -1,16 +1,5 @@
 import React from "react";
 
-/**
- * @param {{
- *   icon: import("react").ElementType;
- *   label: string;
- *   value: import("react").ReactNode;
- *   hint?: string;
- *   badge?: import("react").ReactNode;
- *   iconClassName?: string;
- *   children?: import("react").ReactNode;
- * }} props
- */
 export default function AdminKpiCard({ icon: Icon, label, value, hint, badge, iconClassName, children }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_14px_rgba(15,23,42,0.06)] sm:p-6">

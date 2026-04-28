@@ -8,12 +8,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // start as true
 
+  const refreshUser = async () => {
+    const res = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+    setUser(res.data.user || null);
+    return res.data.user || null;
+  };
+
   // Fetch user info on mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
-        setUser(res.data.user || null);
+        await refreshUser();
       } catch (err) {
         setUser(null);
       } finally {
@@ -72,7 +77,7 @@ const signup = async (formData) => { // 1. Change to accept a single object
 };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, signup, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

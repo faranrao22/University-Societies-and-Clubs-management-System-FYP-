@@ -148,6 +148,10 @@ const eventSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    volunteerRoles: {
+      type: [String],
+      default: [],
+    },
 
     // ✅ UPDATED volunteers array
     volunteers: {

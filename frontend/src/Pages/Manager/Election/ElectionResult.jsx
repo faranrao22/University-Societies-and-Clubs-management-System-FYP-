@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { toast } from "react-hot-toast";
 import {
   User,
   Trophy,
@@ -70,7 +71,8 @@ export default function ElectionResultsPage() {
       setSelectedElection((prev) => ({
         ...prev,
         societyName: res.data.societyName,
-        rolesAssigned: res.data.rolesAssigned, // get rolesAssigned from backend
+        rolesAssigned: Boolean(res.data.rolesAssigned),
+        officialWinners: Array.isArray(res.data.officialWinners) ? res.data.officialWinners : [],
       }));
 
       setResults(res.data.results || {});
@@ -104,15 +106,15 @@ export default function ElectionResultsPage() {
       );
 
       if (res.data.success) {
-        alert("Roles assigned successfully!");
+        toast.success("Winners announced successfully");
         // Refresh results and update rolesAssigned
         fetchResults(selectedElection);
       } else {
-        alert("Failed to assign roles: " + res.data.message);
+        toast.error("Failed to announce winners: " + res.data.message);
       }
     } catch (err) {
       console.error(err);
-      alert("Error assigning roles: " + err.message);
+      toast.error("Error announcing winners: " + err.message);
     }
   };
 
@@ -125,12 +127,15 @@ export default function ElectionResultsPage() {
     );
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="manager-page-shell">
       <div>
         {/* Header */}
-        <h1 className="text-3xl font-bold mb-6 text-[#3699FF]">
-          Election Results
-        </h1>
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Election Results</h1>
+          <p className="manager-page-subtitle">
+            Review full vote counts for every candidate and announce official winners.
+          </p>
+        </div>
 
         {/* Dropdown */}
         <div className="mb-6 flex gap-3">
@@ -161,16 +166,16 @@ export default function ElectionResultsPage() {
           )}
         </div>
 
-        {/* Assign Roles Button */}
-        {selectedElection?.status === "COMPLETED" &&
-          !selectedElection.rolesAssigned && (
-            <button
-              onClick={handleAssignRoles}
-              className="mb-6 px-4 py-2 cursor-pointer bg-[#3699FF] text-white rounded-lg shadow-md hover:brightness-110"
-            >
-              UPDATE WINNER
-            </button>
-          )}
+        {/* Announce Winners Button */}
+        {selectedElection?.status === "COMPLETED" && (
+          <button
+            onClick={handleAssignRoles}
+            disabled={Boolean(selectedElection.rolesAssigned)}
+            className="mb-6 rounded-lg bg-[#3699FF] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {selectedElection.rolesAssigned ? "Winner Announced" : "Announce Winner"}
+          </button>
+        )}
 
         {/* No Selection */}
         {!selectedElection && (
@@ -213,15 +218,24 @@ export default function ElectionResultsPage() {
               </div>
             </div>
 
-            {/* Results */}
+            {/* Manager view: always show all candidates with vote counts */}
             {Object.keys(results).length === 0 ? (
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-[#4B5563] text-center">
                 Loading results...
               </div>
             ) : (
               Object.entries(results).map(([role, candidates]) => {
-                const sorted = [...candidates].sort((a, b) => b.votes - a.votes);
-                const totalVotes = sorted.reduce((sum, c) => sum + c.votes, 0);
+                const list = Array.isArray(candidates) ? candidates : [];
+                const sorted = [...list].sort((a, b) => {
+                  const vb = Number(b.votes) || 0;
+                  const va = Number(a.votes) || 0;
+                  if (vb !== va) return vb - va;
+                  return (a.candidateId || "").localeCompare(b.candidateId || "", undefined, { sensitivity: "base" });
+                });
+                const totalVotes = sorted.reduce((sum, c) => sum + (Number(c.votes) || 0), 0);
+                const officialWinner = (selectedElection.officialWinners || []).find((w) => w.role === role);
+                const officialWinnerId = officialWinner?.candidateId ? String(officialWinner.candidateId) : null;
+                const leadingId = sorted[0]?.candidateId ? String(sorted[0].candidateId) : null;
 
                 return (
                   <div key={role} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -230,43 +244,54 @@ export default function ElectionResultsPage() {
                       {role}
                     </h3>
 
-                    <div className="space-y-4">
-                      {sorted.map((c, index) => {
-                        const isWinner = index === 0 && c.votes > 0;
-                        const pct =
-                          totalVotes > 0 ? ((c.votes / totalVotes) * 100).toFixed(1) : 0;
-
-                        return (
-                          <div key={c.candidateId} className="border border-gray-200 p-4 rounded-lg bg-slate-100/60">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold">#{index + 1}</span>
-                                {isWinner && <Trophy size={16} className="text-yellow-500" />}
-                                <span className="font-medium text-gray-900">{c.fullname}</span>
+                    {sorted.length === 0 ? (
+                      <p className="text-sm text-gray-500">No votes cast for this role yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {sorted.map((candidate) => {
+                          const votes = Number(candidate.votes) || 0;
+                          const pct = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : "0.0";
+                          const cid = String(candidate.candidateId || "");
+                          const isOfficialWinner = officialWinnerId && cid === officialWinnerId;
+                          const isLeading = !officialWinnerId && leadingId && cid === leadingId;
+                          return (
+                            <div
+                              key={cid || candidate.fullname}
+                              className="rounded-lg border border-gray-200 bg-slate-100/60 p-4"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  {(isOfficialWinner || isLeading) && (
+                                    <Trophy size={16} className="text-yellow-500" />
+                                  )}
+                                  <span className="font-medium text-gray-900">{candidate.fullname}</span>
+                                  {isOfficialWinner && (
+                                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">
+                                      Winner
+                                    </span>
+                                  )}
+                                  {isLeading && !isOfficialWinner && (
+                                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
+                                      Leading
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-gray-900">{votes}</p>
+                                  <p className="text-xs text-gray-500">{pct}%</p>
+                                </div>
                               </div>
-
-                              <div className="text-right">
-                                <p className="font-bold text-gray-900">{c.votes}</p>
-                                <p className="text-xs text-gray-500">{pct}%</p>
+                              <div className="mt-2 h-2 w-full rounded bg-gray-200">
+                                <div
+                                  className="h-2 rounded bg-gradient-to-r from-[#3699FF] to-[#60a5fa]"
+                                  style={{ width: `${Math.max(0, Math.min(100, Number(pct)))}%` }}
+                                />
                               </div>
                             </div>
-
-                            <div className="w-full bg-gray-200 h-2 rounded mt-2">
-                              <div
-                                className="bg-gradient-to-r from-[#3699FF] to-[#60a5fa] h-2 rounded"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-
-                            {isWinner && (
-                              <p className="text-xs mt-2 font-semibold text-[#3699FF]">
-                                {selectedElection.status === "COMPLETED" ? "ELECTED" : "LEADING"}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })

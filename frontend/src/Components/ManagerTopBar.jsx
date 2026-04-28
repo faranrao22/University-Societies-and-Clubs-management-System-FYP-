@@ -15,6 +15,9 @@ function titleFromPath(pathname) {
   if (pathname.includes("/eventForm")) {
     return pathname.includes("/edit") ? "Edit event" : "New event";
   }
+  if (pathname.includes("/all-elections/") && pathname.includes("/edit")) {
+    return "Edit election";
+  }
   const parts = pathname.split("/").filter(Boolean);
   const seg = parts[parts.length - 1] || "";
   const map = {
@@ -43,7 +46,7 @@ export default function ManagerTopBar({ user, onMenuToggle }) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6 lg:left-64"
+      className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-slate-300/80 bg-slate-100/95 px-4 backdrop-blur-sm sm:px-6 lg:left-64"
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <button
@@ -62,7 +65,7 @@ export default function ManagerTopBar({ user, onMenuToggle }) {
       <div className="flex shrink-0 items-center gap-1">
         <NotificationBell buttonClassName="hover:bg-gray-100" />
         <Link
-          to="/profile"
+          to="/manager/profile"
           className="flex shrink-0 items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition hover:bg-gray-50"
         >
           <span className="hidden max-w-[140px] truncate text-sm font-medium text-gray-700 sm:block">

@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ManagerSidebar from './Components/ManagerSidebar'
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import ManagerLayout from './Layouts/ManagerLayout';
 import Dashboard from './Pages/Manager/Dashboard/Dashboard';
 import Events from './Pages/Manager/Events/Events';
@@ -31,6 +31,7 @@ import MemberForm from './Pages/Admin/Members/MemberForm';
 import { Toaster } from "react-hot-toast";
 import { Navigate } from 'react-router-dom';
 import Profile from './Pages/User/profile/Profile';
+import ProfileEntry from './Pages/User/profile/ProfileEntry';
 import SpecificSocietyMembers from './Pages/Manager/Members/SpecificSocietyMembers';
 import Election from './Pages/Manager/Election/Election';
 import ElectionCandidates from './Pages/Manager/Election/ElectionCandidates';
@@ -49,6 +50,7 @@ import EventForm from './Pages/Manager/Events/EventForm';
 import ReviewCandidate from './Pages/Manager/Election/ReviewCandidate';
 import DraftElections from './Pages/Manager/Election/DraftElections';
 import AllElections from './Pages/Manager/Election/AllElections';
+import EditElection from './Pages/Manager/Election/EditElection';
 import ScheduleVoting from './Pages/Manager/Election/ScheduleVoting';
 import VotePage from './Pages/User/Election/Vote';
 import ApplyPage from './Pages/User/Election/ApplyPage';
@@ -64,6 +66,30 @@ import AllEvents from './Pages/User/Events/Events';
 import EventDetails from './Pages/User/Events/EventDetails';
 import AdminEventDetails from './Pages/Manager/Events/Detail';
 import ProfileVolunteerStatus from './Pages/User/profile/ProfileVolunteerStatus';
+import ManagerProfile from './Pages/Manager/Profile/ManagerProfile';
+import AdminProfile from './Pages/Admin/Profile/AdminProfile';
+
+function RouteScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlBehavior = html.style.scrollBehavior;
+    const prevBodyBehavior = body.style.scrollBehavior;
+
+    html.style.scrollBehavior = "auto";
+    body.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+
+    requestAnimationFrame(() => {
+      html.style.scrollBehavior = prevHtmlBehavior;
+      body.style.scrollBehavior = prevBodyBehavior;
+    });
+  }, [pathname]);
+
+  return null;
+}
 
 function App() {
   const { loading } = useAuth();
@@ -72,12 +98,13 @@ function App() {
     <>
       {loading && <Loader />} {/* Show loader globally */}
       <Toaster position="top-right" reverseOrder={false} />
+      <RouteScrollToTop />
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path='/signup' element={<SignupForm />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProfileEntry />} />
           <Route path='/contact' element={<Contact />} />
           <Route path='/community' element={<AllSocieties />} />
           <Route path="/society/:id" element={<SocietyView />} />
@@ -127,6 +154,7 @@ function App() {
           <Route path="societyRequests" element={<SocietyRequest />} />
           <Route path="society-posts" element={<AdminSocietyPosts />} />
           <Route path="contact-messages" element={<AdminContactMessages />} />
+          <Route path="profile" element={<AdminProfile />} />
           <Route path="allmembers" element={<Navigate to="/admin/users" replace />} />
         </Route>
 
@@ -137,6 +165,7 @@ function App() {
           <Route path="events" element={<Events />} />
           <Route path='election' element={<Election />} />
           <Route path="all-elections" element={<AllElections />} />
+          <Route path="all-elections/:electionId/edit" element={<EditElection />} />
           <Route path='my-drafts' element={<DraftElections />} />
           <Route path="applications" element={<ElectionCandidates />} />
           <Route path='reviewCandidate/:electionId/:candidateId' element={<ReviewCandidate />} />
@@ -155,6 +184,7 @@ function App() {
           <Route path="details/:id" element={<AdminEventDetails />} />
           <Route path="requests" element={<Requests />} />
           <Route path="society-posts" element={<ManagerSocietyPosts />} />
+          <Route path="profile" element={<ManagerProfile />} />
         </Route>
 
       </Routes>

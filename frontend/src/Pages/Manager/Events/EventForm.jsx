@@ -145,6 +145,8 @@ function EventForm() {
   const [speakers, setSpeakers] = useState([]);
   const [hosts, setHosts] = useState([]);
   const [chiefGuests, setChiefGuests] = useState([]);
+  const [volunteerRoles, setVolunteerRoles] = useState([]);
+  const [volunteerRoleInput, setVolunteerRoleInput] = useState("");
   const [category, setCategory] = useState("");
   
   const CATEGORY_OPTIONS = [
@@ -226,6 +228,7 @@ function EventForm() {
         setSpeakers(data.speakers || []);
         setHosts(data.hosts || []);
         setChiefGuests(data.chiefGuests || []);
+        setVolunteerRoles(Array.isArray(data.volunteerRoles) ? data.volunteerRoles : []);
         
         // ✅ FIX: Restore category on edit
         setCategory(data.category || "");
@@ -297,6 +300,7 @@ function EventForm() {
       data.append("speakers", JSON.stringify(speakers));
       data.append("hosts", JSON.stringify(hosts));
       data.append("chiefGuests", JSON.stringify(chiefGuests));
+      data.append("volunteerRoles", JSON.stringify(volunteerRoles));
 
       if (id) {
         await axios.put(`${API_BASE_URL}/event/update/${id}`, data, { withCredentials: true });
@@ -314,6 +318,19 @@ function EventForm() {
   };
 
   if (!editor) return <div className="p-10 text-center text-gray-500">Loading Editor...</div>;
+
+  const addVolunteerRole = () => {
+    const next = volunteerRoleInput.trim();
+    if (!next) return;
+    const exists = volunteerRoles.some((r) => r.toLowerCase() === next.toLowerCase());
+    if (exists) return;
+    setVolunteerRoles((prev) => [...prev, next]);
+    setVolunteerRoleInput("");
+  };
+
+  const removeVolunteerRole = (role) => {
+    setVolunteerRoles((prev) => prev.filter((r) => r !== role));
+  };
 
   // ─── UI ─────────────────────────────────────────────────────────────────────
   return (
@@ -488,6 +505,60 @@ function EventForm() {
                     <input type="datetime-local" name="volunteerDeadline" value={formData.volunteerDeadline} onChange={handleChange} className={inputCls} />
                     <p className="text-[10px] text-[#4B5563] mt-1 italic">Leave empty for no deadline.</p>
                   </div>
+                </div>
+              )}
+
+              {formData.isVolunteerOpen && (
+                <div className="pt-2">
+                  <label className="block text-[#4B5563] font-black text-[10px] uppercase tracking-widest mb-2">
+                    Volunteer Roles (Pre-defined)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={volunteerRoleInput}
+                      onChange={(e) => setVolunteerRoleInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addVolunteerRole();
+                        }
+                      }}
+                      placeholder="e.g. Registration Desk"
+                      className={inputCls}
+                    />
+                    <button
+                      type="button"
+                      onClick={addVolunteerRole}
+                      className="px-4 py-2 bg-[#3699FF] text-white rounded-lg text-sm font-medium hover:brightness-110 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {volunteerRoles.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {volunteerRoles.map((role) => (
+                        <span
+                          key={role}
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#4B5563]"
+                        >
+                          {role}
+                          <button
+                            type="button"
+                            onClick={() => removeVolunteerRole(role)}
+                            className="text-[#3699FF] hover:text-red-600"
+                            aria-label={`Remove ${role}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-[#4B5563] mt-2 italic">
+                      Add roles to limit volunteer applications/assignments to these positions.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

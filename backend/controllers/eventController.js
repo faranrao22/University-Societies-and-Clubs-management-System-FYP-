@@ -16,6 +16,9 @@ const parseArray = (value) => {
   }
 };
 
+const normalizeRole = (value) => String(value || "").trim();
+const inRoleSet = (value, roleSet) => roleSet.has(normalizeRole(value).toLowerCase());
+
 // ─── Create Event ─────────────────────────────────────────────────────────────
 const createEvent = async (req, res) => {
   try {
@@ -40,6 +43,9 @@ const createEvent = async (req, res) => {
     const speakers    = parseArray(req.body.speakers);
     const hosts       = parseArray(req.body.hosts);
     const chiefGuests = parseArray(req.body.chiefGuests);
+    const volunteerRoles = parseArray(req.body.volunteerRoles)
+      .map((r) => String(r || "").trim())
+      .filter(Boolean);
 
     const newEvent = new eventModel({
       title, creator: req.user.id, organizer, description,
@@ -48,6 +54,7 @@ const createEvent = async (req, res) => {
       isVolunteerOpen: isVolunteerOpen === "true" || isVolunteerOpen === true,
       volunteerLimit: volunteerLimit || 0,
       volunteerDeadline: volunteerDeadline || null,
+      volunteerRoles,
       speakers, hosts, chiefGuests, category,
     });
 
@@ -74,6 +81,9 @@ const updateEvent = async (req, res) => {
     const speakers    = parseArray(req.body.speakers);
     const hosts       = parseArray(req.body.hosts);
     const chiefGuests = parseArray(req.body.chiefGuests);
+    const volunteerRoles = parseArray(req.body.volunteerRoles)
+      .map((r) => String(r || "").trim())
+      .filter(Boolean);
 
     const updates = {
       ...(title         && { title }),
@@ -87,6 +97,7 @@ const updateEvent = async (req, res) => {
       isVolunteerOpen: isVolunteerOpen === "true" || isVolunteerOpen === true,
       volunteerLimit:  volunteerLimit || 0,
       volunteerDeadline: volunteerDeadline || null,
+      volunteerRoles,
       speakers, hosts, chiefGuests,
     };
 
@@ -204,9 +215,24 @@ const applyVolunteer = async (req, res) => {
     if (event.volunteerLimit > 0 && approvedCount >= event.volunteerLimit)
       return res.status(400).json({ message: "Volunteer limit already reached" });
 
+    const normalizedPreferredRole = normalizeRole(preferredRole);
+    const predefinedRoles = (event.volunteerRoles || [])
+      .map(normalizeRole)
+      .filter(Boolean);
+    const predefinedRoleSet = new Set(predefinedRoles.map((r) => r.toLowerCase()));
+
+    if (predefinedRoles.length > 0) {
+      if (!normalizedPreferredRole) {
+        return res.status(400).json({ message: "Please select a preferred role" });
+      }
+      if (!inRoleSet(normalizedPreferredRole, predefinedRoleSet)) {
+        return res.status(400).json({ message: "Preferred role must be one of the event's defined roles" });
+      }
+    }
+
     event.volunteers.push({
       user: req.user.id, motivation: motivation || "",
-      skills: parsedSkills, preferredRole: preferredRole || "",
+      skills: parsedSkills, preferredRole: normalizedPreferredRole,
       availability: availability || "", status: "pending",
     });
 
@@ -247,16 +273,42 @@ const handleVolunteerRequest = async (req, res) => {
     const { eventId, userId, action, role } = req.body;
     const event = await eventModel.findById(eventId);
     if (!event) return res.status(404).json({ message: "Event not found" });
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to manage volunteers for this event" });
+    }
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({ message: "Invalid action" });
+    }
 
     const volunteer = event.volunteers.find((v) => v.user.toString() === userId);
     if (!volunteer) return res.status(404).json({ message: "Request not found" });
+    if (volunteer.status !== "pending") {
+      return res.status(400).json({ message: "Only pending applications can be updated" });
+    }
 
     if (action === "approve") {
       const approvedCount = event.volunteers.filter((v) => v.status === "approved").length;
       if (event.volunteerLimit > 0 && approvedCount >= event.volunteerLimit)
         return res.status(400).json({ message: "Volunteer limit reached" });
+      const normalizedRole = normalizeRole(role);
+      const predefinedRoles = (event.volunteerRoles || [])
+        .map(normalizeRole)
+        .filter(Boolean);
+      const predefinedRoleSet = new Set(predefinedRoles.map((r) => r.toLowerCase()));
+
+      if (predefinedRoles.length > 0) {
+        if (!normalizedRole) {
+          return res.status(400).json({ message: "Assigned role is required" });
+        }
+        if (!inRoleSet(normalizedRole, predefinedRoleSet)) {
+          return res.status(400).json({ message: "Assigned role must be one of the event's defined roles" });
+        }
+      } else if (!normalizedRole) {
+        return res.status(400).json({ message: "Please provide a role before approval" });
+      }
+
       volunteer.status     = "approved";
-      volunteer.role       = role || "Volunteer";
+      volunteer.role       = normalizedRole;
       volunteer.approvedAt = new Date();
     } else if (action === "reject") {
       volunteer.status = "rejected";
@@ -296,6 +348,9 @@ const removeVolunteer = async (req, res) => {
     const { eventId, userId } = req.body;
     const event = await eventModel.findById(eventId);
     if (!event) return res.status(404).json({ message: "Event not found" });
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to manage volunteers for this event" });
+    }
     event.volunteers = event.volunteers.filter((v) => v.user.toString() !== userId);
     await event.save();
     res.json({ success: true, message: "Volunteer removed" });

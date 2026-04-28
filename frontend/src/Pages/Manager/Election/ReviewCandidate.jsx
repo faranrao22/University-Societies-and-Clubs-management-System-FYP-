@@ -3,15 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../../config/api.config";
 import { toast } from "react-hot-toast";
-import {
-  FiArrowLeft,
-  FiUser,
-  FiMail,
-  FiCheck,
-  FiX,
-  FiHash,
-  FiShield,
-} from "react-icons/fi";
+import { FiArrowLeft, FiCheck, FiX, FiShield } from "react-icons/fi";
 
 function ReviewCandidate() {
   const { electionId, candidateId } = useParams();
@@ -20,11 +12,8 @@ function ReviewCandidate() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // ✅ reason + action state
   const [reason, setReason] = useState("");
-  const [activeAction, setActiveAction] = useState(null); 
-  // "reject" | "dispute" | null
+  const [activeAction, setActiveAction] = useState(null);
 
   const fetchCandidate = async () => {
     try {
@@ -44,15 +33,13 @@ function ReviewCandidate() {
     fetchCandidate();
   }, [candidateId]);
 
-  // ✅ handle button click first (show input)
   const handleSelectAction = (action) => {
     if (action === "approve") {
       handleAction("approve");
       return;
     }
-
-    setActiveAction(action); // show textarea
-    setReason(""); // reset old reason
+    setActiveAction(action);
+    setReason("");
   };
 
   const handleAction = async (action) => {
@@ -64,7 +51,6 @@ function ReviewCandidate() {
       setActionLoading(true);
 
       let statusValue = "";
-
       if (action === "approve") statusValue = "approved";
       else if (action === "reject") statusValue = "rejected";
       else if (action === "dispute") statusValue = "inDispute";
@@ -79,11 +65,9 @@ function ReviewCandidate() {
       );
 
       toast.success(`Candidate marked as ${statusValue}`);
-
       setReason("");
       setActiveAction(null);
       fetchCandidate();
-
     } catch (err) {
       toast.error("Could not update candidate status");
     } finally {
@@ -108,130 +92,119 @@ function ReviewCandidate() {
   }
 
   const { fullname, email, image, cnic, status } = candidate;
+  const imageUrl = image
+    ? `${API_BASE_URL.replace("/api", "")}/uploads/${image}`
+    : "https://via.placeholder.com/800x800?text=No+Image";
+
+  const statusClasses =
+    status === "approved"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+      : status === "rejected"
+      ? "bg-rose-50 text-rose-700 border-rose-100"
+      : status === "inDispute"
+      ? "bg-amber-50 text-amber-700 border-amber-100"
+      : "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
-
-        {/* BACK */}
+    <div className="manager-page-shell">
+      <div className="space-y-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-sm text-[#4B5563] hover:text-[#3699FF] mb-6"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#4B5563] hover:text-[#3699FF]"
         >
-          <FiArrowLeft className="mr-2" /> Back
+          <FiArrowLeft /> Back
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Review Candidate</h1>
+          <p className="manager-page-subtitle">
+            Review the candidate profile and update application status.
+          </p>
+        </div>
 
-          {/* PROFILE */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="aspect-square bg-slate-100">
               <img
-                src={`${API_BASE_URL.replace("/api", "")}/uploads/${image}`}
+                src={imageUrl}
                 alt={fullname}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "https://via.placeholder.com/800x800?text=No+Image";
+                }}
               />
             </div>
-
-            <div className="p-5 text-center">
-              <h1 className="text-xl font-semibold text-[#3699FF]">{fullname}</h1>
+            <div className="space-y-2 p-5">
+              <h2 className="text-lg font-semibold text-gray-900">{fullname}</h2>
               <p className="text-sm text-gray-500">{email}</p>
-              <p className="text-xs text-gray-400 mt-2">CNIC: {cnic}</p>
-
-              <div className="mt-4">
-                <span className={`px-3 py-1 text-xs rounded-full font-medium
-                  ${
-                    status === "approved"
-                      ? "bg-green-100 text-green-700"
-                      : status === "rejected"
-                      ? "bg-red-100 text-red-700"
-                      : status === "inDispute"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {status === "inDispute" ? "IN DISPUTE" : status.toUpperCase()}
-                </span>
-              </div>
+              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses}`}>
+                {status === "inDispute" ? "In Dispute" : status}
+              </span>
             </div>
           </div>
 
-          {/* RIGHT */}
-          <div className="md:col-span-2 space-y-6">
-
-            {/* DETAILS */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-              <h2 className="text-lg font-semibold mb-4 text-[#3699FF]">Candidate Details</h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <DataField icon={<FiUser />} label="Full Name" value={fullname} />
-                <DataField icon={<FiMail />} label="Email" value={email} />
-                <DataField icon={<FiHash />} label="CNIC" value={cnic} />
+          <div className="space-y-6 lg:col-span-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-base font-semibold text-[#3699FF]">Candidate Details</h2>
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-gray-200">
+                    <DetailRow label="Full Name" value={fullname} />
+                    <DetailRow label="Email" value={email} />
+                    <DetailRow label="CNIC" value={cnic || "—"} />
+                    <DetailRow label="Current Status" value={status === "inDispute" ? "In Dispute" : status} />
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* ACTION */}
             {status === "pending" && (
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-
-                <h3 className="text-lg font-semibold text-[#3699FF]">Review Application</h3>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex gap-3 flex-wrap">
-
+              <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="text-base font-semibold text-[#3699FF]">Review Application</h3>
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleSelectAction("approve")}
                     disabled={actionLoading}
-                    className="px-5 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#3699FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
                   >
                     <FiCheck /> Approve
                   </button>
-
                   <button
                     onClick={() => handleSelectAction("reject")}
                     disabled={actionLoading}
-                    className="px-5 py-2 bg-red-500 text-white rounded-lg"
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                   >
                     <FiX /> Reject
                   </button>
-
                   <button
                     onClick={() => handleSelectAction("dispute")}
                     disabled={actionLoading}
-                    className="px-5 py-2 bg-yellow-500 text-white rounded-lg"
+                    className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-50"
                   >
                     <FiShield /> Dispute
                   </button>
-
                 </div>
 
-                {/* ✅ SHOW INPUT ONLY WHEN REJECT OR DISPUTE CLICKED */}
                 {(activeAction === "reject" || activeAction === "dispute") && (
-                  <div className="mt-4 space-y-3">
-
+                  <div className="space-y-3">
                     <textarea
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder={`Enter reason for ${activeAction}...`}
                       rows={4}
-                      className="w-full border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-[#3699FF]/30"
+                      className="w-full rounded-lg border border-gray-300 p-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/30"
                     />
-
                     <button
                       onClick={() => handleAction(activeAction)}
                       disabled={actionLoading || reason.trim() === ""}
-                      className="px-5 py-2 bg-[#3699FF] text-white rounded-lg shadow-sm hover:brightness-110 disabled:opacity-50"
+                      className="rounded-lg bg-[#3699FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
                     >
-                      Submit {activeAction}
+                      Submit {activeAction === "dispute" ? "dispute" : "rejection"}
                     </button>
-
                   </div>
                 )}
-
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -239,14 +212,13 @@ function ReviewCandidate() {
   );
 }
 
-/* FIELD */
-const DataField = ({ icon, label, value }) => (
-  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-    <div className="text-xs text-[#4B5563] flex gap-2 items-center">
-      {icon} {label}
-    </div>
-    <div className="font-medium text-[#3699FF]">{value}</div>
-  </div>
+const DetailRow = ({ label, value }) => (
+  <tr>
+    <td className="w-40 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      {label}
+    </td>
+    <td className="px-4 py-3 text-sm font-medium text-gray-900">{value}</td>
+  </tr>
 );
 
 export default ReviewCandidate;

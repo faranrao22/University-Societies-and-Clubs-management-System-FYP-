@@ -2,10 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { MoreVertical } from "lucide-react";
 
-/**
- * @typedef {{ label: string; to?: string; onClick?: () => void; danger?: boolean }} RowMenuItem
- * @param {{ items: RowMenuItem[]; align?: "left" | "right" }} props
- */
 export default function AdminRowMenu({ items, align = "right" }) {
   const [open, setOpen] = useState(false);
   const root = useRef(null);

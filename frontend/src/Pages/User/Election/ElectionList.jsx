@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Users, Calendar, ChevronRight, Sparkles } from "lucide-react";
+import { Users, Calendar, ChevronRight, Sparkles, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL from "../../../config/api.config";
-import PublicSearchInput from "../../../Components/PublicSearchInput";
-import PublicSectionCard from "../../../Components/PublicSectionCard";
+import PublicFilterCard, { PublicFilterChip, PublicFilterChipGroup } from "../../../Components/PublicFilterCard";
 import useDebouncedValue from "../../../hooks/useDebouncedValue";
 
 const COLORS = {
@@ -30,6 +29,7 @@ const statusConfig = {
 export default function ElectionListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [selectedSociety, setSelectedSociety] = useState("All");
   const debouncedSearch = useDebouncedValue(search, 350);
   const { data: elections = [], isPending: loading } = useQuery({
     queryKey: ["public", "elections", "all"],
@@ -57,14 +57,17 @@ export default function ElectionListPage() {
     () =>
       Object.keys(grouped).reduce((acc, society) => {
         const query = debouncedSearch.toLowerCase();
+        if (selectedSociety !== "All" && selectedSociety !== society) return acc;
         const list = grouped[society].filter((e) => e.title.toLowerCase().includes(query) || society.toLowerCase().includes(query));
         if (list.length) acc[society] = list;
         return acc;
       }, {}),
-    [grouped, debouncedSearch]
+    [grouped, debouncedSearch, selectedSociety]
   );
 
   const hasResults = Object.keys(filtered).length > 0;
+  const societyOptions = useMemo(() => Object.keys(grouped).sort((a, b) => a.localeCompare(b)), [grouped]);
+  const hasActiveFilters = Boolean(search.trim()) || selectedSociety !== "All";
 
   return (
     <div className="min-h-screen px-6 py-10" style={{ backgroundColor: COLORS.bg }}>
@@ -78,12 +81,49 @@ export default function ElectionListPage() {
           <p className="max-w-2xl text-sm" style={{ color: COLORS.textMuted }}>Participate in student leadership elections. Apply for roles, cast your vote, or view results.</p>
         </header>
 
-        <div className="mb-8">
-          <PublicSectionCard className="!p-3">
-            <PublicSearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search elections or societies..." />
-            {search ? <button onClick={() => setSearch("")} className="mt-2 text-xs font-medium" style={{ color: COLORS.accent }}>Clear</button> : null}
-          </PublicSectionCard>
-        </div>
+        <PublicFilterCard
+          title="Find elections"
+          subtitle="Search by election title or filter by society."
+          search={{
+            id: "elections-search",
+            value: search,
+            onChange: (e) => setSearch(e.target.value),
+            placeholder: "Search elections or societies...",
+          }}
+          headerAction={
+            hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setSelectedSociety("All");
+                }}
+                className="flex items-center gap-1 text-xs font-semibold hover:underline"
+                style={{ color: COLORS.primary }}
+              >
+                <X size={12} strokeWidth={2.5} /> Clear
+              </button>
+            ) : null
+          }
+        >
+          {societyOptions.length > 0 ? (
+            <PublicFilterChipGroup label="By society">
+              <PublicFilterChip active={selectedSociety === "All"} onClick={() => setSelectedSociety("All")}>
+                All societies
+              </PublicFilterChip>
+              {societyOptions.map((society) => (
+                <PublicFilterChip
+                  key={society}
+                  active={selectedSociety === society}
+                  className="max-w-[min(100%,14rem)]"
+                  onClick={() => setSelectedSociety(selectedSociety === society ? "All" : society)}
+                >
+                  <span className="line-clamp-2">{society}</span>
+                </PublicFilterChip>
+              ))}
+            </PublicFilterChipGroup>
+          ) : null}
+        </PublicFilterCard>
 
         {loading ? <div className="py-16 text-center"><p className="text-sm" style={{ color: COLORS.textMuted }}>Loading elections...</p></div> : null}
         {!loading && !hasResults ? <div className="rounded-xl border py-16 text-center" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}><div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: "rgba(29, 78, 216, 0.12)" }}><Users size={24} style={{ color: COLORS.primary }} /></div><h3 className="mb-2 text-base font-semibold" style={{ color: COLORS.text }}>No elections found</h3><p className="text-sm" style={{ color: COLORS.textMuted }}>{search ? "Try adjusting your search terms." : "Check back later for upcoming elections."}</p></div> : null}

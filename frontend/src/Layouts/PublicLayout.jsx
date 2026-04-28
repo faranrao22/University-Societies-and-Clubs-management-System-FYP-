@@ -41,13 +41,22 @@ const PublicLayout = () => {
   const showLayout = !hiddenRoutes.includes(location.pathname);
   const meta = pageMeta(location.pathname);
 
+  const { pathname } = location;
+  /** Detail pages: keep top nav chrome, only hide large title banner. */
+  const hidePageBanner =
+    pathname.startsWith("/eventdetails/") ||
+    pathname.startsWith("/society/") ||
+    pathname.startsWith("/societies/");
+
   return (
     <>
       {showLayout && (
         <>
           <Topbar />
           <Navbar />
-          {meta ? <PublicPageBanner title={meta.title} subtitle={meta.subtitle} /> : null}
+          {!hidePageBanner && meta ? (
+            <PublicPageBanner title={meta.title} subtitle={meta.subtitle} />
+          ) : null}
         </>
       )}
 

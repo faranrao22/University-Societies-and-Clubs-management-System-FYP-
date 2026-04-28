@@ -6,24 +6,24 @@ const shadowCard = "shadow-[0_4px_14px_rgba(15,23,42,0.06)]";
 
 export const adminUi = {
   /** Full-width admin canvas (outer layout already caps max width). */
-  page: "mx-auto w-full max-w-7xl space-y-8",
-  pageNarrow: "mx-auto w-full max-w-5xl space-y-8",
-  pageDetail: "mx-auto w-full max-w-4xl space-y-8",
-  pageForm: "mx-auto w-full max-w-2xl space-y-8 pb-20 pt-1",
+  page: "mx-auto w-full max-w-7xl space-y-6",
+  pageNarrow: "mx-auto w-full max-w-7xl space-y-6",
+  pageDetail: "mx-auto w-full max-w-7xl space-y-6",
+  pageForm: "mx-auto w-full max-w-7xl space-y-6 pb-8 pt-1",
 
   eyebrow: "text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-600",
-  h1: "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl",
+  h1: "text-xl font-semibold tracking-tight text-slate-900",
   lead: "mt-2 max-w-2xl text-sm leading-relaxed text-slate-600",
 
   headerRow:
-    "flex flex-col gap-4 border-b border-slate-200/80 pb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6",
+    "flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6",
 
   sectionHead: "mb-4",
   sectionHeading: "text-xs font-semibold uppercase tracking-wide text-slate-500",
   sectionSub: "mt-0.5 text-xs text-slate-400",
 
   card: `overflow-hidden rounded-2xl border border-slate-200/90 bg-white ${shadowCard}`,
-  cardPadded: `rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 ${shadowCard}`,
+  cardPadded: `rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 ${shadowCard}`,
   tableCard: `overflow-hidden rounded-2xl border border-slate-200/90 bg-white ${shadowCard}`,
   tableToolbar:
     "flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5",
@@ -101,7 +101,7 @@ export const adminUi = {
   linkRowTitle: "font-medium text-slate-900",
   linkRowDesc: "mt-0.5 text-xs text-slate-500",
 
-  panel: `rounded-2xl border border-slate-200/90 bg-white p-5 text-sm ${shadowCard} sm:p-6`,
+  panel: `rounded-2xl border border-slate-200/90 bg-white p-4 text-sm ${shadowCard} sm:p-5`,
   panelTitle: "text-sm font-semibold tracking-tight text-slate-900",
 
   insightCard:

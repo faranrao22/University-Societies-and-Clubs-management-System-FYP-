@@ -9,7 +9,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Strike from "@tiptap/extension-strike";
-import { Loader2, ImagePlus, Megaphone, Pencil, Trash2, X } from "lucide-react";
+import { Loader2, ImagePlus, Pencil, Trash2, X } from "lucide-react";
 
 function ToolbarBtn({ onClick, active, title, children }) {
   return (
@@ -200,21 +200,16 @@ export default function SocietyPosts() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-2 pb-16">
+    <div className="manager-page-shell">
       <Link to="/manager/society" className="mb-6 inline-flex items-center text-sm font-medium text-gray-600 hover:text-[#3699FF]">
         <IoArrowBack className="mr-2" size={20} /> Back to societies
       </Link>
 
-      <div className="mb-8 flex items-start gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#3699FF]/10 text-[#3699FF]">
-          <Megaphone size={24} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Society posts</h1>
-          <p className="text-sm text-gray-500">
-            Create, edit, or remove announcements for societies you manage. Public and member feeds update automatically.
-          </p>
-        </div>
+      <div className="manager-page-header">
+        <h1 className="manager-page-heading">Society Posts</h1>
+        <p className="manager-page-subtitle">
+          Create, edit, and remove announcements for societies you manage.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

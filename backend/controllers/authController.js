@@ -15,7 +15,8 @@ const signup = async (req, res) => {
       rollNo,
       Department, // Must match frontend key 'Department'
       semester,
-      session,
+      sessionStart,
+      sessionEnd,
       role
     } = req.body;
 
@@ -51,10 +52,18 @@ const signup = async (req, res) => {
     };
 
     if (userRole === "user") {
-      if (!rollNo || !semester || !session) {
+      const start = (sessionStart || "").trim();
+      const end = (sessionEnd || "").trim();
+      if (!rollNo || !semester || !start || !end) {
         return res.status(400).json({
           success: false,
-          message: "Roll number, semester and session are required for students",
+          message: "Roll number, semester, session start and session end are required for students",
+        });
+      }
+      if (end < start) {
+        return res.status(400).json({
+          success: false,
+          message: "Session end date must be on or after the session start date",
         });
       }
 
@@ -66,8 +75,10 @@ const signup = async (req, res) => {
       }
 
       userData.rollNo = rollNo;
-      userData.semester = semester; // Ensure this matches your String type in Schema
-      userData.session = session;
+      userData.semester = semester;
+      userData.sessionStart = start;
+      userData.sessionEnd = end;
+      userData.session = `${start} — ${end}`;
       userData.studentCardFront = studentCardFront;
       userData.studentCardBack = studentCardBack;
     }
@@ -182,6 +193,80 @@ const getUser = async (req, res) => {
   }
 };
 
+const updateMyProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const user = await users.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const {
+      fullname,
+      Department,
+      rollNo,
+      semester,
+      sessionStart,
+      sessionEnd,
+    } = req.body;
+
+    if (fullname !== undefined) {
+      const nextFullname = String(fullname || "").trim();
+      if (!nextFullname) {
+        return res.status(400).json({ success: false, message: "Full name cannot be empty" });
+      }
+      user.fullname = nextFullname;
+    }
+
+    if (Department !== undefined) {
+      user.Department = String(Department || "").trim();
+    }
+
+    if (rollNo !== undefined) {
+      user.rollNo = String(rollNo || "").trim();
+    }
+
+    if (semester !== undefined) {
+      user.semester = String(semester || "").trim();
+    }
+
+    if (sessionStart !== undefined) {
+      user.sessionStart = String(sessionStart || "").trim();
+    }
+
+    if (sessionEnd !== undefined) {
+      user.sessionEnd = String(sessionEnd || "").trim();
+    }
+
+    if (user.sessionStart && user.sessionEnd) {
+      if (user.sessionEnd < user.sessionStart) {
+        return res.status(400).json({
+          success: false,
+          message: "Session end date must be on or after session start date",
+        });
+      }
+      user.session = `${user.sessionStart} — ${user.sessionEnd}`;
+    } else if (!user.sessionStart || !user.sessionEnd) {
+      user.session = "";
+    }
+
+    await user.save();
+    const safeUser = await users.findById(userId).select("-password");
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: safeUser,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 const getAllUsers = async (req, res) => {
   try {
     const usersList = await users.find().select("-password").sort({ createdAt: -1 });
@@ -253,6 +338,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, getUser, getAllUsers, deleteUser, updateUser };
+module.exports = { signup, login, logout, getUser, updateMyProfile, getAllUsers, deleteUser, updateUser };
 
 

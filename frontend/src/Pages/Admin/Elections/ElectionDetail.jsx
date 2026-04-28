@@ -8,9 +8,6 @@ import {
   Trash2,
   Vote,
   Building2,
-  Users,
-  ListChecks,
-  Trophy,
 } from "lucide-react";
 import API_BASE_URL from "../../../config/api.config";
 import toast from "react-hot-toast";
@@ -96,7 +93,6 @@ export default function AdminElectionDetail() {
 
   const soc = election.societyId;
   const candidates = election.candidates || [];
-  const votes = election.votes || [];
   const winners = election.winners || [];
 
   return (
@@ -156,6 +152,12 @@ export default function AdminElectionDetail() {
           <span className="text-slate-500">Voting window:</span> {fmt(election.startDate)} →{" "}
           {fmt(election.endDate)}
         </p>
+        <p className="text-slate-700">
+          <span className="text-slate-500">Candidates:</span> {candidates.length}
+        </p>
+        <p className="text-slate-700">
+          <span className="text-slate-500">Votes cast:</span> {(election.votes || []).length}
+        </p>
       </div>
 
       <div className={`${a.panel} space-y-2`}>
@@ -166,15 +168,7 @@ export default function AdminElectionDetail() {
         {soc ? (
           <>
             <p className="font-medium text-slate-900">{soc.name}</p>
-            {soc.shortName && <p className="text-slate-600 text-xs">Short: {soc.shortName}</p>}
-            <p className="text-slate-700">Status: {soc.status || "—"}</p>
-            <p className="text-slate-700">
-              {soc.email || "—"} · {soc.phone || "—"}
-            </p>
-            {soc.department && <p className="text-slate-600">{soc.department}</p>}
-            {soc.description && (
-              <p className="text-slate-600 text-xs mt-2 whitespace-pre-wrap">{soc.description}</p>
-            )}
+            {soc.department ? <p className="text-slate-700">{soc.department}</p> : null}
             {soc._id && (
               <Link
                 to={`/admin/societies/${soc._id}`}
@@ -190,54 +184,25 @@ export default function AdminElectionDetail() {
       </div>
 
       <div className={a.panel}>
-        <h2 className={`${a.panelTitle} mb-3 flex items-center gap-2`}>
-          <Users size={16} className="text-slate-500" strokeWidth={1.75} />
-          Candidates ({candidates.length})
-        </h2>
+        <h2 className={`${a.panelTitle} mb-3`}>Candidates ({candidates.length})</h2>
         {candidates.length === 0 ? (
           <p className="text-sm text-slate-500">No candidates.</p>
         ) : (
-          <ul className="space-y-4 text-sm">
+          <ul className="space-y-2 text-sm">
             {candidates.map((c, i) => {
               const u = c.user;
               return (
-                <li
-                  key={i}
-                  className="rounded-lg border border-slate-200 bg-slate-50/80 p-4"
-                >
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <span className="font-medium text-slate-900">{c.role}</span>
-                    <span
-                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                        c.status === "approved"
-                          ? "bg-teal-50 text-teal-800"
-                          : c.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {c.status}
-                    </span>
-                  </div>
+                <li key={i} className="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2">
+                  <span className="font-medium text-slate-900">{c.role}</span>
+                  <span className="text-slate-500"> - </span>
                   {u ? (
-                    <p className="text-slate-900 font-medium">
-                      {u.fullname} · {u.email}
-                    </p>
+                    <span className="text-slate-800">
+                      {u.fullname} ({u.email})
+                    </span>
                   ) : (
-                    <p className="text-slate-500">User missing</p>
+                    <span className="text-slate-500">User missing</span>
                   )}
-                  {u && (
-                    <p className="text-xs text-slate-600 mt-1">
-                      Dept {u.Department || "—"} · Roll {u.rollNo || "—"}
-                    </p>
-                  )}
-                  <p className="text-xs text-slate-600 mt-2">CNIC: {c.cnic}</p>
-                  {c.reason && <p className="text-xs text-slate-600 mt-1">Reason: {c.reason}</p>}
-                  {c.image && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Image file: <code className="bg-slate-100 px-1 rounded">{c.image}</code>
-                    </p>
-                  )}
+                  <span className="ml-2 text-xs uppercase text-slate-500">{c.status}</span>
                 </li>
               );
             })}
@@ -246,43 +211,7 @@ export default function AdminElectionDetail() {
       </div>
 
       <div className={a.panel}>
-        <h2 className={`${a.panelTitle} mb-3 flex items-center gap-2`}>
-          <ListChecks size={16} className="text-slate-500" strokeWidth={1.75} />
-          Votes ({votes.length})
-        </h2>
-        {votes.length === 0 ? (
-          <p className="text-sm text-slate-500">No votes cast.</p>
-        ) : (
-          <div className="max-h-72 overflow-y-auto text-sm space-y-2">
-            {votes.map((v, i) => (
-              <div
-                key={i}
-                className="border-b border-slate-100 pb-2 last:border-0 text-slate-800"
-              >
-                <span className="text-slate-500 text-xs uppercase">{v.role}</span>
-                <p className="mt-0.5">
-                  Voter:{" "}
-                  {v.voter
-                    ? `${v.voter.fullname} (${v.voter.email})`
-                    : "—"}
-                </p>
-                <p className="text-xs text-slate-600">
-                  For:{" "}
-                  {v.candidate
-                    ? `${v.candidate.fullname} (${v.candidate.email})`
-                    : "—"}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className={a.panel}>
-        <h2 className={`${a.panelTitle} mb-3 flex items-center gap-2`}>
-          <Trophy size={16} className="text-slate-500" strokeWidth={1.75} />
-          Winners ({winners.length})
-        </h2>
+        <h2 className={`${a.panelTitle} mb-3`}>Winners ({winners.length})</h2>
         {winners.length === 0 ? (
           <p className="text-sm text-slate-500">No winners recorded.</p>
         ) : (
@@ -296,10 +225,6 @@ export default function AdminElectionDetail() {
           </ul>
         )}
       </div>
-
-      <p className="text-xs text-slate-400">
-        Record created {fmt(election.createdAt)} · Updated {fmt(election.updatedAt)}
-      </p>
 
       <AdminDeleteModal
         open={deleteOpen}

@@ -6,6 +6,9 @@ import { RiDeleteBinLine } from "react-icons/ri";
 import { FaEdit } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 
+const FALLBACK_SOCIETY_IMG =
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop";
+
 function Society() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -59,12 +62,12 @@ function Society() {
   });
 
   return (
-    <div className="min-h-screen p-6 font-sans">
+    <div className="manager-page-shell space-y-6 font-sans">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#3699FF] tracking-tight">Societies & Clubs</h1>
-          <p className="mt-1 text-sm text-gray-500">Active societies only. Pending societies appear under Society status.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="manager-page-header mb-0">
+          <h1 className="manager-page-heading">Societies</h1>
+          <p className="manager-page-subtitle">Active societies only. Pending societies appear under Society status.</p>
         </div>
         <Link to="/manager/societyform">
           <button className="bg-[#3699FF] text-white px-5 py-2.5 font-medium tracking-wide rounded-lg shadow-md hover:brightness-110 transition">
@@ -74,7 +77,7 @@ function Society() {
       </div>
 
       {/* Search */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 bg-white border border-gray-200 p-4 mb-6 rounded-xl shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between gap-4 bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
         <input
           type="text"
           placeholder="Search by Society or President"
@@ -85,7 +88,7 @@ function Society() {
       </div>
 
       {/* Society Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {filteredSocieties.length === 0 && (
           <p className="col-span-full text-center text-gray-500">
             No active societies found.
@@ -94,33 +97,30 @@ function Society() {
         {filteredSocieties.map((society) => (
           <div
             key={society._id}
-            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1"
+            className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[#3699FF]/35 hover:shadow-md"
           >
-            <div className="w-full h-32 overflow-hidden mb-4">
-              {society.image ? (
-                <img
-                  src={uploadFileUrl(society.image)}
-                  alt={society.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-slate-100 flex items-center justify-center text-[#4B5563]">
-                  No Image
-                </div>
-              )}
+            <div className="relative h-36 w-full overflow-hidden bg-slate-100">
+              <img
+                src={uploadFileUrl(society.image) || FALLBACK_SOCIETY_IMG}
+                alt={society.name}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = FALLBACK_SOCIETY_IMG;
+                }}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/45 via-transparent to-transparent" />
             </div>
-            <div className="px-4 pb-4">
-              <h3 className="text-lg font-semibold text-gray-800">{society.name}</h3>
-              <p className="text-gray-600 text-sm mb-1">
-                {society.description?.substring(0, 80) || "No description available."}
+            <div className="flex flex-1 flex-col p-4">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#3699FF]">
+                Society
               </p>
-              <p className="text-gray-500 text-xs mb-1">
-                President: {society.roles?.find(r => r.name === "President")?.user?.fullname || "N/A"}
-              </p>
-              <p className="text-gray-500 text-xs">Members: {society.members?.length || 0}</p>
+              <h3 className="line-clamp-2 min-h-[2.5rem] text-[15px] font-bold leading-snug tracking-tight text-slate-800">
+                {society.name}
+              </h3>
               <button
                 onClick={() => navigate(`/manager/societyDetails/${society._id}`)}
-                className="mt-2 w-full bg-[#3699FF] text-white text-sm font-medium py-2.5 rounded-lg hover:brightness-110 transition shadow-sm"
+                className="mt-auto inline-flex w-full items-center justify-center rounded-md bg-[#3699FF] py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
               >
                 View Details
               </button>

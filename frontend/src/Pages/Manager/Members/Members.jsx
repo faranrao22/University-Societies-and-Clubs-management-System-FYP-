@@ -24,15 +24,13 @@ function Members() {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="manager-page-shell">
+      <div>
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#3699FF]">
-            Society Members
-          </h1>
-          <p className="text-sm text-[#4B5563]">
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Society Members</h1>
+          <p className="manager-page-subtitle">
             Select a society to view and manage its members
           </p>
         </div>

@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import API_BASE_URL from "../../../config/api.config";
+import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import { toast } from "react-hot-toast";
 import {
-  Calendar,
   ChevronDown,
   Play,
-  Clock,
   Building2,
   AlertCircle,
   Mail,
-  Fingerprint,
+  Loader2,
+  CalendarClock,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const MANAGER_CARD_CLASS =
+  "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[#3699FF]/35 hover:shadow-md";
 
 function ScheduleVoting() {
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedElection, setSelectedElection] = useState(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [scheduleDrafts, setScheduleDrafts] = useState({});
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchElections = async () => {
@@ -33,6 +35,13 @@ function ScheduleVoting() {
       );
 
       setElections(finalized);
+      setScheduleDrafts((prev) => {
+        const next = { ...prev };
+        finalized.forEach((election) => {
+          if (!next[election._id]) next[election._id] = { startDate: "", endDate: "" };
+        });
+        return next;
+      });
     } catch (err) {
       toast.error("Failed to fetch elections");
     } finally {
@@ -45,6 +54,9 @@ function ScheduleVoting() {
   }, []);
 
   const makeElectionLive = async (electionId) => {
+    const draft = scheduleDrafts[electionId] || { startDate: "", endDate: "" };
+    const { startDate, endDate } = draft;
+
     if (!startDate || !endDate) {
       toast.error("Start & End date required");
       return;
@@ -62,8 +74,10 @@ function ScheduleVoting() {
       toast.success("Election is now LIVE");
       fetchElections();
       setSelectedElection(null);
-      setStartDate("");
-      setEndDate("");
+      setScheduleDrafts((prev) => ({
+        ...prev,
+        [electionId]: { startDate: "", endDate: "" },
+      }));
     } catch (err) {
       toast.error("Failed to start election");
     } finally {
@@ -73,33 +87,36 @@ function ScheduleVoting() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-[#3699FF] rounded-full animate-spin"></div>
+      <div className="flex min-h-[40vh] items-center justify-center text-gray-500">
+        <Loader2 className="h-8 w-8 animate-spin text-[#3699FF]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 text-gray-900">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-[#3699FF]">
-              Election Deployment Center
-            </h1>
-            <p className="text-xs text-[#4B5563] uppercase tracking-widest">
-              Schedule & Activate Voting
-            </p>
-          </div>
+    <div className="manager-page-shell">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="manager-page-header mb-0">
+          <h1 className="manager-page-heading">Schedule voting</h1>
+          <p className="manager-page-subtitle">
+            Set voting window for finalized elections and move them live.
+          </p>
         </div>
-      </header>
+        <button
+          type="button"
+          onClick={fetchElections}
+          className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+        >
+          <RefreshCw size={16} />
+          Refresh
+        </button>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-6 mt-10 space-y-6">
+      <main className="space-y-4">
         {!elections.length ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
             <AlertCircle className="mx-auto text-gray-300 mb-4" size={36} />
-            <p className="text-[#4B5563] text-sm">
+            <p className="text-sm text-[#4B5563]">
               No finalized elections available
             </p>
           </div>
@@ -110,24 +127,23 @@ function ScheduleVoting() {
             return (
               <div
                 key={election._id}
-                className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+                className={MANAGER_CARD_CLASS}
               >
-                {/* Summary */}
                 <div
                   onClick={() =>
                     setSelectedElection(isOpen ? null : election._id)
                   }
-                  className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition"
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg bg-slate-100 border border-gray-200 flex items-center justify-center text-[#3699FF]">
                       <Building2 size={20} />
                     </div>
                     <div>
-                      <h2 className="font-bold text-lg">
+                      <h2 className="font-bold text-base sm:text-lg text-[#111827]">
                         {election.title}
                       </h2>
-                      <p className="text-xs uppercase tracking-widest text-[#4B5563]">
+                      <p className="mt-0.5 text-[11px] uppercase tracking-widest text-[#4B5563]">
                         {election.societyId?.name || "Unknown Society"}
                       </p>
                     </div>
@@ -140,7 +156,6 @@ function ScheduleVoting() {
                   />
                 </div>
 
-                {/* Expand */}
                 <AnimatePresence>
                   {isOpen && (
                     <motion.div
@@ -148,9 +163,8 @@ function ScheduleVoting() {
                       animate={{ height: "auto" }}
                       exit={{ height: 0 }}
                     >
-                      <div className="p-6 border-t border-gray-200 space-y-8">
+                      <div className="p-5 sm:p-6 border-t border-gray-200 space-y-6">
 
-                        {/* Candidate List */}
                         <div className="space-y-3">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-[#3699FF]">
                             Verified Candidates
@@ -159,13 +173,17 @@ function ScheduleVoting() {
                           {election.candidates.map((c) => (
                             <div
                               key={c._id}
-                              className="flex items-center justify-between bg-slate-100/90 border border-gray-100 p-4 rounded-lg"
+                              className="flex items-center justify-between bg-slate-50 border border-gray-200 p-3.5 rounded-lg"
                             >
                               <div className="flex items-center gap-3">
                                 <img
-                                  src={`${API_BASE_URL.replace("/api", "")}/uploads/${c.image}`}
+                                  src={uploadFileUrl(c.image)}
                                   className="w-10 h-10 rounded-md object-cover"
                                   alt=""
+                                  onError={(e) => {
+                                    e.currentTarget.src =
+                                      "https://ui-avatars.com/api/?name=Candidate&background=e2e8f0&color=334155";
+                                  }}
                                 />
                                 <div>
                                   <p className="font-semibold text-sm">
@@ -178,45 +196,59 @@ function ScheduleVoting() {
                                 </div>
                               </div>
 
-                              <span className="text-[10px] font-bold uppercase px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
+                              <span className="text-[10px] font-bold uppercase px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
                                 {c.status}
                               </span>
                             </div>
                           ))}
                         </div>
 
-                        {/* Scheduling Section */}
-                        <div className="bg-gradient-to-r from-[#3699FF] via-[#4dabf7] to-[#7ec8fc] rounded-xl p-6 text-white shadow-md">
-                          <h3 className="text-sm font-bold mb-6">
-                            Configure Voting Window
-                          </h3>
+                        <div className="rounded-xl border border-gray-200 bg-slate-50 p-4 sm:p-5">
+                          <div className="mb-4 flex items-center gap-2">
+                            <CalendarClock size={16} className="text-[#3699FF]" />
+                            <h3 className="text-sm font-bold text-[#111827]">
+                              Configure voting window
+                            </h3>
+                          </div>
 
                           <div className="grid md:grid-cols-3 gap-4 items-end">
                             <div>
-                              <label className="text-xs uppercase text-white/70">
+                              <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                                 Start Date
                               </label>
                               <input
                                 type="datetime-local"
-                                value={startDate}
+                                value={scheduleDrafts[election._id]?.startDate || ""}
                                 onChange={(e) =>
-                                  setStartDate(e.target.value)
+                                  setScheduleDrafts((prev) => ({
+                                    ...prev,
+                                    [election._id]: {
+                                      ...(prev[election._id] || { startDate: "", endDate: "" }),
+                                      startDate: e.target.value,
+                                    },
+                                  }))
                                 }
-                                className="w-full mt-2 bg-white/10 border border-white/25 rounded-md px-3 py-2 text-sm text-white placeholder-white/50"
+                                className="w-full mt-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#3699FF] focus:outline-none focus:ring-2 focus:ring-[#3699FF]/25"
                               />
                             </div>
 
                             <div>
-                              <label className="text-xs uppercase text-white/70">
+                              <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                                 End Date
                               </label>
                               <input
                                 type="datetime-local"
-                                value={endDate}
+                                value={scheduleDrafts[election._id]?.endDate || ""}
                                 onChange={(e) =>
-                                  setEndDate(e.target.value)
+                                  setScheduleDrafts((prev) => ({
+                                    ...prev,
+                                    [election._id]: {
+                                      ...(prev[election._id] || { startDate: "", endDate: "" }),
+                                      endDate: e.target.value,
+                                    },
+                                  }))
                                 }
-                                className="w-full mt-2 bg-white/10 border border-white/25 rounded-md px-3 py-2 text-sm text-white placeholder-white/50"
+                                className="w-full mt-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#3699FF] focus:outline-none focus:ring-2 focus:ring-[#3699FF]/25"
                               />
                             </div>
 
@@ -225,13 +257,13 @@ function ScheduleVoting() {
                                 makeElectionLive(election._id)
                               }
                               disabled={actionLoading}
-                              className="bg-white text-[#3699FF] hover:bg-white/90 transition px-6 py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#3699FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-60"
                             >
                               {actionLoading ? (
                                 "Deploying..."
                               ) : (
                                 <>
-                                  Deploy <Play size={14} />
+                                  Deploy voting <Play size={14} />
                                 </>
                               )}
                             </button>

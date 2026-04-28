@@ -58,7 +58,7 @@ const NAV_GROUPS = [
         label: "All elections",
         icon: Layers,
         to: "all-elections",
-        isActive: (p) => p === "/manager/all-elections",
+        isActive: (p) => p === "/manager/all-elections" || p.startsWith("/manager/all-elections/"),
       },
       {
         label: "Create draft",
@@ -305,7 +305,7 @@ function ManagerSidebar({ isOpen, onClose }) {
 
           <footer className="mt-auto shrink-0 border-t border-white/[0.06] px-2 py-3">
             <Link
-              to="/profile"
+              to="/manager/profile"
               onClick={() => onClose?.()}
               className="mb-2 flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-white/[0.05]"
             >

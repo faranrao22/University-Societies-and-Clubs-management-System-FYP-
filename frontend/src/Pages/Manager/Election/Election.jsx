@@ -92,12 +92,12 @@ export default function ElectionDraft() {
   };
 
   return (
-    <div className="min-h-screen p-6 font-sans text-gray-900">
-      <div >
+    <div className="manager-page-shell font-sans text-gray-900">
+      <div>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-[#3699FF]">Create Election Draft</h1>
-          <p className="text-sm text-[#4B5563]">
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Create Election Draft</h1>
+          <p className="manager-page-subtitle">
             Start by creating a draft election. You can schedule applications and voting later.
           </p>
         </div>

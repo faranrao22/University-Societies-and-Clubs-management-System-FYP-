@@ -4,6 +4,62 @@ import axios from "axios";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import { IoArrowBack, IoClose } from "react-icons/io5";
 
+function isPdfFile(path) {
+  if (!path || typeof path !== "string") return false;
+  return /\.pdf($|\?)/i.test(path.trim());
+}
+
+function DocumentPreview({ rawPath, label }) {
+  const src = uploadFileUrl(rawPath);
+  const isPdf = isPdfFile(rawPath || "");
+  const fileName = typeof rawPath === "string" ? rawPath.split("/").pop() : "";
+
+  if (!src) {
+    return (
+      <div className="w-full h-40 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-500">
+        No file uploaded
+      </div>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="w-full h-40 rounded-lg border border-gray-200 bg-slate-50 p-3 flex flex-col justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase text-gray-400">PDF Document</p>
+          <p className="mt-1 text-sm font-semibold text-gray-700 break-all">{fileName || `${label}.pdf`}</p>
+        </div>
+        <div className="flex gap-2">
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 rounded-md border border-gray-300 bg-white py-2 text-center text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
+          >
+            Open
+          </a>
+          <a
+            href={src}
+            download={fileName || `${label}.pdf`}
+            className="flex-1 rounded-md bg-[#3699FF] py-2 text-center text-xs font-semibold text-white hover:brightness-110 transition"
+          >
+            Download
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      className="w-full h-40 object-cover rounded-lg border border-gray-200"
+      alt={label}
+      onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+    />
+  );
+}
+
 function SpecificSocietyMembers() {
   const { societyId } = useParams();
   const navigate = useNavigate();
@@ -142,7 +198,11 @@ function SpecificSocietyMembers() {
                     </div>
                     <div>
                       <span className="text-gray-500 block">Session</span>
-                      <span className="font-semibold">{selectedMember.session}</span>
+                      <span className="font-semibold">
+                        {selectedMember.sessionStart && selectedMember.sessionEnd
+                          ? `${selectedMember.sessionStart} – ${selectedMember.sessionEnd}`
+                          : selectedMember.session || "—"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -154,21 +214,11 @@ function SpecificSocietyMembers() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <span className="text-xs text-gray-500 uppercase">Front Side</span>
-                    <img 
-                      src={uploadFileUrl(selectedMember.studentCardFront)} 
-                      className="w-full h-40 object-cover rounded-lg border border-gray-200" 
-                      alt="ID Front"
-                      onError={(e) => e.target.src = "https://via.placeholder.com/300x200?text=No+Image"}
-                    />
+                    <DocumentPreview rawPath={selectedMember.studentCardFront} label="Front Side" />
                   </div>
                   <div className="space-y-1">
                     <span className="text-xs text-gray-500 uppercase">Back Side</span>
-                    <img 
-                      src={uploadFileUrl(selectedMember.studentCardBack)} 
-                      className="w-full h-40 object-cover rounded-lg border border-gray-200" 
-                      alt="ID Back"
-                      onError={(e) => e.target.src = "https://via.placeholder.com/300x200?text=No+Image"}
-                    />
+                    <DocumentPreview rawPath={selectedMember.studentCardBack} label="Back Side" />
                   </div>
                 </div>
               </div>

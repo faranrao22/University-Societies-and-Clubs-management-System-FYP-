@@ -6,8 +6,6 @@ import {
   ArrowLeft,
   Download,
   Trash2,
-  Calendar,
-  MapPin,
   User,
 } from "lucide-react";
 import API_BASE_URL from "../../../config/api.config";
@@ -16,15 +14,6 @@ import { adminUi as a } from "../components/adminUi";
 import AdminDeleteModal from "../components/AdminDeleteModal";
 import { fetchAdminSociety, fetchAdminSocietyEvents } from "../api/adminApi";
 import { adminKeys } from "../api/adminQueryKeys";
-
-function formatDate(d) {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleString();
-  } catch {
-    return "—";
-  }
-}
 
 export default function AdminSocietyDetail() {
   const { societyId } = useParams();
@@ -164,26 +153,27 @@ export default function AdminSocietyDetail() {
 
       <div className={`${a.panel} space-y-3 text-sm`}>
         <h2 className={a.panelTitle}>Details</h2>
-        <p>
-          <span className="text-slate-500">Description:</span>{" "}
-          <span className="text-slate-800">{society.description || "—"}</span>
-        </p>
-        <p>
-          <span className="text-slate-500">Department:</span> {society.department || "—"}
-        </p>
-        <p>
-          <span className="text-slate-500">Advisor:</span> {society.advisor || "—"}
-        </p>
-        <p>
-          <span className="text-slate-500">Contact:</span> {society.email || "—"} · {society.phone || "—"}
-        </p>
-        <p>
-          <span className="text-slate-500">Join policy:</span> {society.joinPolicy || "—"}
-        </p>
-        <p>
-          <span className="text-slate-500">Members (count):</span>{" "}
-          {society.members?.length ?? society.membersCount ?? "—"}
-        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {society.department ? (
+            <p><span className="text-slate-500">Department:</span> {society.department}</p>
+          ) : null}
+          {society.advisor ? (
+            <p><span className="text-slate-500">Advisor:</span> {society.advisor}</p>
+          ) : null}
+          {society.email ? (
+            <p><span className="text-slate-500">Email:</span> {society.email}</p>
+          ) : null}
+          {society.phone ? (
+            <p><span className="text-slate-500">Phone:</span> {society.phone}</p>
+          ) : null}
+          {society.joinPolicy ? (
+            <p><span className="text-slate-500">Join policy:</span> {society.joinPolicy}</p>
+          ) : null}
+          <p><span className="text-slate-500">Members:</span> {society.members?.length ?? society.membersCount ?? 0}</p>
+        </div>
+        {society.description ? (
+          <p><span className="text-slate-500">Description:</span> <span className="text-slate-800">{society.description}</span></p>
+        ) : null}
       </div>
 
       <div className={a.panel}>
@@ -220,10 +210,7 @@ export default function AdminSocietyDetail() {
       </div>
 
       <div className={a.panel}>
-        <h2 className={`${a.panelTitle} mb-4 flex items-center gap-2`}>
-          <Calendar size={16} className="text-slate-500" strokeWidth={1.75} />
-          Events for this society
-        </h2>
+        <h2 className={`${a.panelTitle} mb-4`}>Events for this society</h2>
         {eventsLoading ? (
           <p className="text-sm text-slate-500">Loading events…</p>
         ) : events.length === 0 ? (
@@ -237,18 +224,8 @@ export default function AdminSocietyDetail() {
               >
                 <div>
                   <p className="font-medium text-slate-900">{ev.title}</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                    <Calendar size={12} />
-                    {formatDate(ev.startDateTime)} — {formatDate(ev.endDateTime)}
-                  </p>
-                  {ev.venue && (
-                    <p className="flex items-center gap-1 text-xs text-slate-500">
-                      <MapPin size={12} />
-                      {ev.venue}
-                    </p>
-                  )}
                   <p className="mt-1 text-xs text-slate-500">
-                    Status: {ev.status || "—"} · Creator: {ev.creator?.fullname || "—"}
+                    Status: {ev.status || "—"}
                   </p>
                 </div>
                 <button

@@ -18,7 +18,12 @@ export default function DraftElections() {
         const res = await axios.get(`${API_BASE_URL}/election/my-drafts`, {
           withCredentials: true,
         });
-        setDraftElections(res.data.data);
+        const list = Array.isArray(res.data.data) ? res.data.data : [];
+        // Schedule-application page should only show elections that still need an application date.
+        const pendingSchedule = list.filter(
+          (e) => e.status === "DRAFT" && !e.applyDeadline
+        );
+        setDraftElections(pendingSchedule);
       } catch (err) {
         console.error(err);
       } finally {
@@ -39,13 +44,8 @@ export default function DraftElections() {
         { withCredentials: true }
       );
       HotToast.success("Application deadline set & status updated!");
-      setDraftElections((prev) =>
-        prev.map((e) =>
-          e._id === election._id
-            ? { ...e, applyDeadline, status: "APPLICATIONS_OPEN" }
-            : e
-        )
-      );
+      // Remove from this page once application date is set.
+      setDraftElections((prev) => prev.filter((e) => e._id !== election._id));
       setOpenFormId(null);
       setApplyDeadline("");
     } catch (err) {
@@ -62,9 +62,11 @@ export default function DraftElections() {
     );
 
   return (
-    <div className="min-h-screen p-6">
-      <div >
-        <h1 className="text-3xl font-bold mb-6 text-[#3699FF]">Draft Elections</h1>
+    <div className="manager-page-shell">
+      <div>
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Draft Elections</h1>
+        </div>
 
         {draftElections.length === 0 && (
           <div className="text-center py-10 text-[#4B5563]">

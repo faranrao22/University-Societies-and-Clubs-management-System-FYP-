@@ -153,12 +153,12 @@ function Volunteers() {
   }
 
   return (
-    <div className="min-h-screen p-6 font-sans">
-      <div className="max-w-6xl mx-auto">
+    <div className="manager-page-shell font-sans">
+      <div>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#3699FF]">Volunteer Management</h1>
-          <p className="text-[#4B5563] mt-1">Manage volunteer applications for your events</p>
+        <div className="manager-page-header">
+          <h1 className="manager-page-heading">Volunteer Management</h1>
+          <p className="manager-page-subtitle">Manage volunteer applications for your events</p>
         </div>
 
         {/* Events Table */}
@@ -389,18 +389,36 @@ function Volunteers() {
                                 <label className="block text-xs text-gray-500 mb-1">
                                   Assign Role (for approval)
                                 </label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. Registration Desk, Tech Support"
-                                  value={roleInput[vol.user?._id] || ""}
-                                  onChange={(e) =>
-                                    setRoleInput((prev) => ({
-                                      ...prev,
-                                      [vol.user?._id]: e.target.value,
-                                    }))
-                                  }
-                                  className="w-full border border-gray-300 px-3 py-1.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3699FF]/30"
-                                />
+                                {Array.isArray(selectedEvent?.volunteerRoles) && selectedEvent.volunteerRoles.length > 0 ? (
+                                  <select
+                                    value={roleInput[vol.user?._id] || ""}
+                                    onChange={(e) =>
+                                      setRoleInput((prev) => ({
+                                        ...prev,
+                                        [vol.user?._id]: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full border border-gray-300 px-3 py-1.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3699FF]/30 bg-white"
+                                  >
+                                    <option value="">Select predefined role...</option>
+                                    {selectedEvent.volunteerRoles.map((role) => (
+                                      <option key={role} value={role}>{role}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. Registration Desk, Tech Support"
+                                    value={roleInput[vol.user?._id] || ""}
+                                    onChange={(e) =>
+                                      setRoleInput((prev) => ({
+                                        ...prev,
+                                        [vol.user?._id]: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full border border-gray-300 px-3 py-1.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3699FF]/30"
+                                  />
+                                )}
                               </div>
                               
                               {/* Action Buttons */}

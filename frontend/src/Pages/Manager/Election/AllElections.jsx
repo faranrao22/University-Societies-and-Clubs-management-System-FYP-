@@ -3,32 +3,24 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import API_BASE_URL from "../../../config/api.config";
 import { useAuth } from "../../../context/AuthContext";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, ArrowRight, CalendarClock, Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const STATUS_OPTIONS = [
-  "DRAFT",
-  "APPLICATIONS_OPEN",
-  "APPLICATIONS_CLOSED",
-  "CANDIDATES_FINALIZED",
-  "VOTING_SCHEDULED",
-  "VOTING_LIVE",
-  "COMPLETED",
-];
+const MANAGER_CARD_CLASS =
+  "group rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[#3699FF]/35 hover:shadow-md";
 
-function formatDeadlineLocal(iso) {
-  if (!iso) return "";
+function formatDateTime(iso) {
+  if (!iso) return "Not set";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (Number.isNaN(d.getTime())) return "Not set";
+  return d.toLocaleString();
 }
 
 export default function AllElections() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
-  const [drafts, setDrafts] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,14 +30,6 @@ export default function AllElections() {
       });
       const list = res.data?.data || [];
       setElections(list);
-      const next = {};
-      list.forEach((e) => {
-        next[e._id] = {
-          status: e.status,
-          applyDeadline: formatDeadlineLocal(e.applyDeadline),
-        };
-      });
-      setDrafts(next);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Failed to load elections");
@@ -58,49 +42,6 @@ export default function AllElections() {
     if (user?._id) load();
   }, [user?._id, load]);
 
-  const updateDraft = (id, field, value) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
-  };
-
-  const handleSave = async (electionId) => {
-    const d = drafts[electionId];
-    if (!d) return;
-    setSavingId(electionId);
-    try {
-      const body = {
-        status: d.status,
-        applyDeadline: d.applyDeadline ? d.applyDeadline : null,
-      };
-      const res = await axios.patch(
-        `${API_BASE_URL}/election/manager/${electionId}`,
-        body,
-        { withCredentials: true }
-      );
-      const updated = res.data?.data;
-      if (updated) {
-        setElections((prev) =>
-          prev.map((e) => (e._id === electionId ? updated : e))
-        );
-        setDrafts((prev) => ({
-          ...prev,
-          [electionId]: {
-            status: updated.status,
-            applyDeadline: formatDeadlineLocal(updated.applyDeadline),
-          },
-        }));
-      }
-      toast.success("Election updated");
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Update failed");
-    } finally {
-      setSavingId(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-gray-500">
@@ -110,13 +51,12 @@ export default function AllElections() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="manager-page-shell">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827]">All elections</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Elections for societies you manage. Update status and application
-            deadline.
+        <div className="manager-page-header mb-0">
+          <h1 className="manager-page-heading">All elections</h1>
+          <p className="manager-page-subtitle">
+            Elections for societies you manage. Click any card to open the full edit page.
           </p>
         </div>
         <button
@@ -134,89 +74,41 @@ export default function AllElections() {
           No elections found for your societies.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
-              <thead className="bg-slate-100">
-                <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    Title
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    Society
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    Application deadline
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {elections.map((e) => {
-                  const id = e._id;
-                  const societyName =
-                    typeof e.societyId === "object" && e.societyId?.name
-                      ? e.societyId.name
-                      : "—";
-                  const d = drafts[id] || {
-                    status: e.status,
-                    applyDeadline: formatDeadlineLocal(e.applyDeadline),
-                  };
-                  return (
-                    <tr key={id} className="hover:bg-gray-50/80">
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {e.title}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{societyName}</td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={d.status}
-                          onChange={(ev) =>
-                            updateDraft(id, "status", ev.target.value)
-                          }
-                          className="w-full min-w-[10rem] max-w-xs rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm focus:border-[#3699FF] focus:outline-none focus:ring-2 focus:ring-[#3699FF]/25"
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                              {s.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="datetime-local"
-                          value={d.applyDeadline}
-                          onChange={(ev) =>
-                            updateDraft(id, "applyDeadline", ev.target.value)
-                          }
-                          className="w-full min-w-[11rem] max-w-xs rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm focus:border-[#3699FF] focus:outline-none focus:ring-2 focus:ring-[#3699FF]/25"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          disabled={savingId === id}
-                          onClick={() => handleSave(id)}
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#3699FF] px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:brightness-105 disabled:opacity-60"
-                        >
-                          {savingId === id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : null}
-                          Save
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {elections.map((e) => {
+            const societyName =
+              typeof e.societyId === "object" && e.societyId?.name ? e.societyId.name : "—";
+            return (
+              <button
+                key={e._id}
+                type="button"
+                onClick={() => navigate(`/manager/all-elections/${e._id}/edit`)}
+                className={MANAGER_CARD_CLASS}
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <p className="line-clamp-2 text-sm font-bold text-[#111827]">{e.title || "Untitled election"}</p>
+                  <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                    {(e.status || "DRAFT").replace(/_/g, " ")}
+                  </span>
+                </div>
+                <div className="space-y-2 text-xs text-gray-600">
+                  <p className="flex items-center gap-1.5">
+                    <Building2 size={14} className="text-[#3699FF]" />
+                    <span className="font-semibold text-gray-700">Society:</span> {societyName}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <CalendarClock size={14} className="text-[#3699FF]" />
+                    <span className="font-semibold text-gray-700">Application deadline:</span>{" "}
+                    {formatDateTime(e.applyDeadline)}
+                  </p>
+                </div>
+                <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#3699FF]">
+                  Edit election
+                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

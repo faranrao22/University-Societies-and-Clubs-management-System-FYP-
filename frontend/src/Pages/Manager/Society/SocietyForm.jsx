@@ -22,7 +22,6 @@ function SocietyForm() {
     name: "",
     shortName: "",
     advisor: "",
-    membersCount: "",
     email: "",
     phone: "",
     description: "",
@@ -42,7 +41,6 @@ function SocietyForm() {
             name: data.name || "",
             shortName: data.shortName || "",
             advisor: data.advisor || "",
-            membersCount: data.membersCount || "",
             email: data.email || "",
             phone: data.phone || "",
             description: data.description || "",
@@ -202,19 +200,6 @@ function SocietyForm() {
               placeholder="Select or create roles..."
             />
             <p className="text-sm text-gray-500 mt-1">Add multiple roles for the society, excluding President.</p>
-          </div>
-
-          {/* Members Count */}
-          <div className="max-w-md">
-            <label className="block text-gray-800 mb-2 font-semibold">Members Count</label>
-            <input
-              type="number"
-              name="membersCount"
-              value={formData.membersCount}
-              onChange={handleChange}
-              placeholder="e.g. 100"
-              className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#3699FF]/35 rounded-lg transition duration-150"
-            />
           </div>
 
           {/* Contact Details */}

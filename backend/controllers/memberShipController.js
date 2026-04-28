@@ -100,7 +100,7 @@ const getManagerJoinRequests = async (req, res) => {
         const societies = await SocietyModel.find({ Creator: req.user.id })
             .populate(
                 "joinRequests.user",
-                "fullname email Department rollNo semester profileImage studentCardFront studentCardBack isGraduated session"
+                "fullname email Department rollNo semester profileImage studentCardFront studentCardBack isGraduated session sessionStart sessionEnd"
             );
 
         // 3. Map through societies and their requests
@@ -206,7 +206,7 @@ const getSocietyMembers = async (req, res) => {
             Creator: req.user.id // Security: Only the creator can view the member list
         }).populate(
             "members", 
-            "fullname email Department rollNo semester profileImage session studentCardFront studentCardBack isGraduated"
+            "fullname email Department rollNo semester profileImage session sessionStart sessionEnd studentCardFront studentCardBack isGraduated"
         );
 
         if (!society) {
@@ -251,14 +251,26 @@ const getMyApplicationStatus = async (req, res) => {
 
         // 🔹 Format response with application details
         const applications = societies.map(society => {
-            // Find user's specific request (if any)
-            const request = society.joinRequests.find(
-                r => r.user?.toString() === req.user.id
-            );
-
-            // Check membership status
+            // Check membership status first
             const isMember = society.members.some(m => m.toString() === req.user.id);
             const isCreator = society.Creator._id.toString() === req.user.id;
+
+            // Find user's request, but ignore stale "Approved" records when user is no longer a member
+            const rawRequest = society.joinRequests.find(
+                r => r.user?.toString() === req.user.id
+            );
+            const request =
+                rawRequest && rawRequest.status === "Approved" && !isMember
+                    ? null
+                    : rawRequest;
+
+            // Optional cleanup: remove stale approved request from document to keep data consistent
+            if (rawRequest && rawRequest.status === "Approved" && !isMember) {
+                society.joinRequests = society.joinRequests.filter(
+                    r => !(r.user?.toString() === req.user.id && r.status === "Approved")
+                );
+                society.save().catch(() => {});
+            }
 
             return {
                 society: {
@@ -294,7 +306,7 @@ const getMyApplicationStatus = async (req, res) => {
                     ? "Member" 
                     : request?.status || "Not Applied"
             };
-        });
+        }).filter(item => item.application || item.membershipStatus.isMember);
 
         // 🔹 Separate by status for easy filtering
         const summary = {

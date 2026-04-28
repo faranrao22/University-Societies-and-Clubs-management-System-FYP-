@@ -187,7 +187,7 @@ const getUserElections = async (req, res) => {
       societyId: { $in: societyIds }
     })
       .populate("candidates.user", "fullname email")
-      .populate("societyId", "name")
+      .populate("societyId", "name roles")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -248,23 +248,40 @@ const MANAGER_ELECTION_STATUSES = [
   "VOTING_LIVE",
   "COMPLETED",
 ];
+const ELIGIBILITY_OPTIONS = ["MEMBERS_ONLY", "ANYONE"];
 
-/** PATCH status and/or applyDeadline for an election the user manages (society Creator). */
+/** PATCH editable election fields for an election the user manages (society Creator). */
 const patchManagerElection = async (req, res) => {
   try {
     const userId = req.user.id;
     const { electionId } = req.params;
-    const { status, applyDeadline } = req.body;
+    const {
+      status,
+      applyDeadline,
+      startDate,
+      endDate,
+      title,
+      roles,
+      votingEligibility,
+      applicationEligibility,
+    } = req.body;
 
-    if (status === undefined && applyDeadline === undefined) {
+    if (
+      status === undefined &&
+      applyDeadline === undefined &&
+      startDate === undefined &&
+      endDate === undefined &&
+      title === undefined &&
+      roles === undefined &&
+      votingEligibility === undefined &&
+      applicationEligibility === undefined
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Provide at least one of: status, applyDeadline",
+        message:
+          "Provide at least one editable field: status, title, roles, applyDeadline, startDate, endDate, votingEligibility, applicationEligibility",
       });
     }
-
-    const societies = await Society.find({ Creator: userId }).select("_id");
-    const allowedSocietyIds = new Set(societies.map((s) => s._id.toString()));
 
     const election = await Election.findById(electionId);
     if (!election) {
@@ -274,7 +291,12 @@ const patchManagerElection = async (req, res) => {
       });
     }
 
-    if (!allowedSocietyIds.has(election.societyId.toString())) {
+    const managerSociety = await Society.findOne({
+      _id: election.societyId,
+      Creator: userId,
+    }).select("roles");
+
+    if (!managerSociety) {
       return res.status(403).json({
         success: false,
         message: "You can only manage elections for societies you created",
@@ -289,6 +311,70 @@ const patchManagerElection = async (req, res) => {
         });
       }
       election.status = status;
+      // Business rule: switching back to draft resets all scheduling dates.
+      if (status === "DRAFT") {
+        election.applyDeadline = undefined;
+        election.startDate = undefined;
+        election.endDate = undefined;
+      }
+    }
+
+    if (title !== undefined) {
+      const nextTitle = String(title || "").trim();
+      if (!nextTitle) {
+        return res.status(400).json({
+          success: false,
+          message: "Title cannot be empty",
+        });
+      }
+      election.title = nextTitle;
+    }
+
+    if (roles !== undefined) {
+      const nextRolesRaw = Array.isArray(roles) ? roles : [];
+      const nextRoles = nextRolesRaw
+        .map((r) => String(r || "").trim())
+        .filter(Boolean);
+
+      if (!nextRoles.length) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one election role is required",
+        });
+      }
+
+      const societyRoles = Array.isArray(managerSociety.roles)
+        ? managerSociety.roles.map((r) => r?.name).filter(Boolean)
+        : [];
+      const invalidRoles = nextRoles.filter((r) => !societyRoles.includes(r));
+      if (invalidRoles.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid roles for this society: ${invalidRoles.join(", ")}`,
+        });
+      }
+
+      election.roles = Array.from(new Set(nextRoles));
+    }
+
+    if (votingEligibility !== undefined && votingEligibility !== null) {
+      if (!ELIGIBILITY_OPTIONS.includes(votingEligibility)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid votingEligibility. Allowed: ${ELIGIBILITY_OPTIONS.join(", ")}`,
+        });
+      }
+      election.votingEligibility = votingEligibility;
+    }
+
+    if (applicationEligibility !== undefined && applicationEligibility !== null) {
+      if (!ELIGIBILITY_OPTIONS.includes(applicationEligibility)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid applicationEligibility. Allowed: ${ELIGIBILITY_OPTIONS.join(", ")}`,
+        });
+      }
+      election.applicationEligibility = applicationEligibility;
     }
 
     if (applyDeadline !== undefined) {
@@ -304,6 +390,53 @@ const patchManagerElection = async (req, res) => {
         }
         election.applyDeadline = d;
       }
+      // Business rule: updating application deadline resets voting schedule.
+      election.startDate = undefined;
+      election.endDate = undefined;
+    }
+
+    if (startDate !== undefined) {
+      if (startDate === null || startDate === "") {
+        election.startDate = undefined;
+      } else {
+        const d = new Date(startDate);
+        if (Number.isNaN(d.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid startDate date",
+          });
+        }
+        election.startDate = d;
+      }
+    }
+
+    if (endDate !== undefined) {
+      if (endDate === null || endDate === "") {
+        election.endDate = undefined;
+      } else {
+        const d = new Date(endDate);
+        if (Number.isNaN(d.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid endDate date",
+          });
+        }
+        election.endDate = d;
+      }
+    }
+
+    if (election.startDate && election.endDate && election.startDate >= election.endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "startDate must be before endDate",
+      });
+    }
+
+    if (election.applyDeadline && election.startDate && election.applyDeadline > election.startDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Application deadline should be before voting start date",
+      });
     }
 
     await election.save();
@@ -427,20 +560,20 @@ const assignSocietyRolesFromElection = async (req, res) => {
         (id) => voteCounter[id] === maxVotes
       );
 
-      // 5️⃣ Pick random winner (tie-break)
-      const winner =
-        topCandidates[Math.floor(Math.random() * topCandidates.length)];
+      // 5️⃣ Deterministic tie-break (same rule as getFinalResults / public UI preview)
+      topCandidates.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+      const winnerId = topCandidates[0];
 
-      // 6️⃣ Save winner in ELECTION (NEW FIX)
+      // 6️⃣ Save winner in ELECTION
       election.winners.push({
         role,
-        user: winner,
+        user: winnerId,
       });
 
       // 7️⃣ Assign role in SOCIETY
       const societyRole = society.roles.find((r) => r.name === role);
       if (societyRole) {
-        societyRole.user = winner;
+        societyRole.user = winnerId;
       }
     }
 
@@ -521,8 +654,10 @@ const getFinalResults = async (req, res) => {
     const election = await Election.findOne({
       _id: electionId,
       status: "COMPLETED",
-    }).populate("candidates.user", "fullname email  Department semester")
-      .populate("societyId", "name")
+    })
+      .populate("candidates.user", "fullname email Department semester")
+      .populate("winners.user", "fullname email Department semester")
+      .populate("societyId", "name");
 
     if (!election) {
       return res.status(404).json({
@@ -560,20 +695,42 @@ const getFinalResults = async (req, res) => {
       });
     }
 
+    /** After "UPDATE WINNER", persisted winners must drive public + manager display */
+    let officialWinners = [];
+    if (election.rolesAssigned && Array.isArray(election.winners) && election.winners.length) {
+      for (const w of election.winners) {
+        const userDoc = w.user;
+        const userId = userDoc?._id || w.user;
+        if (!userId) continue;
+        const uidStr = userId.toString();
+        const role = w.role;
+        const votes = election.votes.filter(
+          (v) => v.role === role && v.candidate?.toString() === uidStr
+        ).length;
+        const cand = election.candidates.find(
+          (c) => c.role === role && c.user.toString() === uidStr
+        );
+        officialWinners.push({
+          role,
+          candidateId: uidStr,
+          fullname: userDoc?.fullname || "—",
+          email: userDoc?.email || null,
+          image: cand?.image || null,
+          Department: userDoc?.Department || null,
+          semester: userDoc?.semester || null,
+          votes,
+        });
+      }
+    }
+
     res.status(200).json({
       success: true,
       electionId: election._id,
       title: election.title,
-      societyName: election.societyId?.name || null, // ✅ ADD THIS
-
+      societyName: election.societyId?.name || null,
       status: election.status,
-      results,
-    });
-    console.log("Final Results Sent:", {
-      electionId: election._id,
-      title: election.title,
-      status: election.status,
-      societyName: election.societyId?.name || null, // ✅ ADD THIS
+      rolesAssigned: Boolean(election.rolesAssigned),
+      officialWinners,
       results,
     });
   } catch (err) {

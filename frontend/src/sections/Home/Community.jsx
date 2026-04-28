@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
+import { Users, Globe, ArrowRight, Eye, Sparkles } from "lucide-react";
 import API_BASE_URL, { uploadFileUrl } from "../../config/api.config";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,8 @@ const COLORS = {
   muted: "#4B5563",
   border: "rgba(30, 64, 175, 0.16)",
 };
+const FALLBACK_SOCIETY_IMG =
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800";
 
 // --- SMART ANIMATION CONFIGURATION ---
 const smartFade = {
@@ -141,78 +143,76 @@ function SocietiesPreview() {
               viewport={{ once: true, margin: "-80px" }}
               className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
             >
-              {societies.map((item, index) => (
+              {societies.map((item) => (
                 <motion.article
                   key={item._id}
                   variants={smartFade}
                   {...smartHover}
-                  className="group bg-white rounded-3xl overflow-hidden border shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full"
-                  style={{ borderColor: COLORS.border }}
+                  className="group flex h-full flex-col overflow-hidden rounded-md border bg-white transition-[border-color,box-shadow] duration-200 hover:border-[#1d4ed8]/35 hover:shadow-md"
+                  style={{
+                    borderColor: COLORS.border,
+                    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+                  }}
                 >
-                  {/* Image - Sleek with very light overlay */}
-                  <div className="relative h-52 overflow-hidden">
+                  <div className="relative h-32 overflow-hidden sm:h-36">
                     <img
-                      src={uploadFileUrl(item.image)}
+                      src={uploadFileUrl(item.image) || FALLBACK_SOCIETY_IMG}
                       alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
                       loading="lazy"
-                      onError={(e) => { 
-                        e.target.src = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800"; 
+                      onError={(e) => {
+                        e.target.src = FALLBACK_SOCIETY_IMG;
                       }}
                     />
-                    {/* 🔹 Very Light Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1B4D28]/10 via-transparent to-transparent pointer-events-none" />
-                    
-                    {/* Smart Department Badge */}
-                    <div className="absolute top-4 left-4">
-                      <span 
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
-                        style={{ 
-                          backgroundColor: index % 2 === 0 ? COLORS.dark : COLORS.gold,
-                          backdropFilter: "blur(4px)"
-                        }}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/55 via-transparent to-transparent" />
+
+                    <div className="absolute left-2 top-2 right-2 flex justify-start">
+                      <span
+                        className="rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                        style={{ backgroundColor: COLORS.gold, color: COLORS.dark }}
                       >
-                        {item.department || "General"}
+                        {item.joinPolicy || "Open"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Content - Tight, scannable, smart */}
-                  <div className="p-6 flex flex-col grow">
-                    {/* Title - Sharp, bold */}
-                    <h3 
-                      className="text-lg font-bold mb-3 leading-tight group-hover:text-[#D4A017] transition-colors duration-200"
-                      style={{ color: COLORS.text }}
-                    >
+                  <div className="flex grow flex-col p-3.5 sm:p-4">
+                    <h3 className="mb-1.5 text-sm font-bold leading-snug tracking-tight sm:text-[15px]" style={{ color: COLORS.text }}>
                       {item.name}
                     </h3>
-                    
-                    {/* Description - Concise */}
-                    <p 
-                      className="text-sm leading-relaxed mb-6 line-clamp-2"
+
+                    <p
+                      className="mb-3 line-clamp-2 flex-grow text-xs leading-relaxed"
                       style={{ color: COLORS.muted }}
                     >
-                      {item.description || "Empowering the next generation of campus leaders."}
+                      {item.description ||
+                        "Connect with members, join events, and grow skills alongside peers who share your interests."}
                     </p>
 
-                    {/* Smart Footer: Members + CTA */}
-                    <div className="pt-5 border-t mt-auto flex items-center justify-between" style={{ borderColor: "rgba(75, 85, 99, 0.1)" }}>
-                      <div className="flex items-center gap-2">
-                        <Users size={14} style={{ color: COLORS.gold }} />
-                        <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: COLORS.muted }}>
-                          {item.members?.length || 0} Members
-                        </span>
+                    <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-dashed pt-2.5" style={{ borderColor: COLORS.border }}>
+                      <div className="flex items-center gap-1 text-[11px] font-semibold sm:text-xs" style={{ color: COLORS.muted }}>
+                        <Users size={13} style={{ color: COLORS.gold }} strokeWidth={2} />
+                        {item.members?.length || 0} members
                       </div>
-                      
-                      <Link to={`/society/${item._id}`} className="block">
-                        <button 
-                          className="text-xs font-bold transition-colors duration-150 hover:underline underline-offset-2"
-                          style={{ color: COLORS.gold }}
-                        >
-                          Details →
-                        </button>
-                      </Link>
+                      <div
+                        className="flex min-w-0 max-w-full items-center gap-1 truncate text-[11px] font-semibold sm:text-xs"
+                        style={{ color: COLORS.muted }}
+                        title={item.department || "General"}
+                      >
+                        <Globe size={13} style={{ color: COLORS.gold }} className="shrink-0" strokeWidth={2} />
+                        <span className="truncate">{item.department || "General"}</span>
+                      </div>
                     </div>
+
+                    <Link
+                      to={`/society/${item._id}`}
+                      className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-sm border border-transparent py-2 text-xs font-semibold tracking-wide transition-colors duration-150 hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+                      style={{ backgroundColor: COLORS.dark, color: "#fff" }}
+                    >
+                      <Eye size={14} strokeWidth={2.25} />
+                      View
+                      <ArrowRight size={13} className="opacity-90" strokeWidth={2.5} />
+                    </Link>
                   </div>
                 </motion.article>
               ))}

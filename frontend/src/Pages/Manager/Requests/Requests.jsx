@@ -4,6 +4,59 @@ import toast, { Toaster } from "react-hot-toast";
 import { Eye, Check, X, Clock, User, BookOpen, Calendar, FileText } from "lucide-react";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 
+function isPdfFile(path) {
+  if (!path || typeof path !== "string") return false;
+  return /\.pdf($|\?)/i.test(path.trim());
+}
+
+function RequestDocumentPreview({ rawPath, label }) {
+  const src = uploadFileUrl(rawPath);
+  const isPdf = isPdfFile(rawPath || "");
+  const fileName = typeof rawPath === "string" ? rawPath.split("/").pop() : "";
+
+  if (!src) {
+    return (
+      <div className="h-24 w-full rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-[11px] text-gray-500">
+        No file
+      </div>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="h-24 w-full rounded-lg border border-gray-200 bg-slate-50 p-2 flex flex-col justify-between">
+        <p className="text-[10px] font-bold uppercase text-gray-400">PDF</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded bg-white border border-gray-300 py-1 text-center text-[10px] font-semibold text-gray-700 hover:bg-gray-100 transition"
+          >
+            Open
+          </a>
+          <a
+            href={src}
+            download={fileName || `${label}.pdf`}
+            className="rounded bg-[#3699FF] py-1 text-center text-[10px] font-semibold text-white hover:brightness-110 transition"
+          >
+            Download
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      className="rounded-lg h-24 w-full object-cover border border-gray-200"
+      alt={label}
+      onError={(e) => (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")}
+    />
+  );
+}
+
 function Requests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,13 +99,13 @@ function Requests() {
   if (loading) return <div className="flex justify-center items-center min-h-screen text-[#4B5563]">Loading...</div>;
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="manager-page-shell">
       <Toaster position="top-right" />
       
-      <div className="max-w-7xl mx-auto">
+      <div>
         <header className="mb-8">
-          <h1 className="text-3xl font-black text-[#3699FF]">Join Requests</h1>
-          <p className="text-[#4B5563] font-medium">Review student applications for your societies.</p>
+          <h1 className="manager-page-heading">Join Requests</h1>
+          <p className="manager-page-subtitle">Review student applications for your societies.</p>
         </header>
 
         {requests.length === 0 ? (
@@ -134,13 +187,18 @@ function Requests() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 text-sm">Session</span>
-                      <span className="font-bold">{selectedRequest.studentProfile?.session}</span>
+                      <span className="font-bold">
+                        {selectedRequest.studentProfile?.sessionStart &&
+                        selectedRequest.studentProfile?.sessionEnd
+                          ? `${selectedRequest.studentProfile.sessionStart} – ${selectedRequest.studentProfile.sessionEnd}`
+                          : selectedRequest.studentProfile?.session || "—"}
+                      </span>
                     </div>
                     <div className="space-y-2">
                       <span className="text-gray-500 text-sm block">ID Card Verification</span>
                       <div className="grid grid-cols-2 gap-2">
-                        <img src={uploadFileUrl(selectedRequest.studentProfile?.studentCardFront)} className="rounded-lg h-24 w-full object-cover border" alt="Front" />
-                        <img src={uploadFileUrl(selectedRequest.studentProfile?.studentCardBack)} className="rounded-lg h-24 w-full object-cover border" alt="Back" />
+                        <RequestDocumentPreview rawPath={selectedRequest.studentProfile?.studentCardFront} label="Front Side" />
+                        <RequestDocumentPreview rawPath={selectedRequest.studentProfile?.studentCardBack} label="Back Side" />
                       </div>
                     </div>
                   </div>

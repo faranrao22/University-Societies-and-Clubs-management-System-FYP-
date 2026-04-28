@@ -7,12 +7,13 @@ import {
   Loader2,
   BookOpen,
   Eye,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
-import PublicSearchInput from "../../../Components/PublicSearchInput";
+import PublicFilterCard, { PublicFilterChip, PublicFilterChipGroup } from "../../../Components/PublicFilterCard";
 
 const FALLBACK_SOCIETY_IMG =
   "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800";
@@ -30,8 +31,11 @@ const COLORS = {
   border: "rgba(30, 64, 175, 0.16)",
 };
 
+const deptLabel = (s) => s.department || "General / Others";
+
 const AllSocieties = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
   const deferredSearch = useDeferredValue(searchQuery);
   const navigate = useNavigate();
 
@@ -46,45 +50,71 @@ const AllSocieties = () => {
     retry: 1,
   });
 
-  // Memoize heavy grouping/filtering so typing and rerenders stay fast.
-  const groupedSocieties = useMemo(() => {
-    const q = deferredSearch.trim().toLowerCase();
-    return societies.reduce((acc, society) => {
-      const dept = society.department || "General / Others";
-      if (!acc[dept]) acc[dept] = [];
+  const departmentOptions = useMemo(() => {
+    const set = new Set();
+    for (const s of societies) set.add(deptLabel(s));
+    return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }, [societies]);
 
-      if (!q || society.name.toLowerCase().includes(q)) {
-        acc[dept].push(society);
-      }
+  const filteredSocieties = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    return societies.filter((s) => {
+      const dept = deptLabel(s);
+      if (selectedDepartment && dept !== selectedDepartment) return false;
+      if (!q) return true;
+      const name = (s.name || "").toLowerCase();
+      const desc = (s.description || "").toLowerCase();
+      return name.includes(q) || desc.includes(q) || dept.toLowerCase().includes(q);
+    });
+  }, [societies, deferredSearch, selectedDepartment]);
+
+  const groupedSocieties = useMemo(() => {
+    return filteredSocieties.reduce((acc, society) => {
+      const dept = deptLabel(society);
+      if (!acc[dept]) acc[dept] = [];
+      acc[dept].push(society);
       return acc;
     }, {});
-  }, [societies, deferredSearch]);
+  }, [filteredSocieties]);
 
-  const departments = Object.keys(groupedSocieties).filter(
-    (dept) => groupedSocieties[dept].length > 0
-  );
+  const departments = Object.keys(groupedSocieties)
+    .filter((dept) => groupedSocieties[dept].length > 0)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedDepartment(null);
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.cream }}>
-      <section className="max-w-6xl mx-auto px-6 py-10 md:py-12">
-        <div className="mb-10 rounded-2xl border bg-white p-5 shadow-sm sm:p-6" style={{ borderColor: COLORS.border }}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-black tracking-tight sm:text-2xl" style={{ color: COLORS.text }}>
-                Find your society
-              </h2>
-              <p className="mt-1 text-sm sm:text-base" style={{ color: COLORS.muted }}>
-                Browse by department or search by society name.
-              </p>
-            </div>
-            <PublicSearchInput
-              className="w-full sm:w-[340px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by society name…"
-            />
-          </div>
-        </div>
+      <section className="max-w-6xl mx-auto px-6 py-6 md:py-8">
+        <PublicFilterCard
+          title="Find your society"
+          subtitle="Browse by department or search by society name."
+          search={{
+            id: "societies-search",
+            value: searchQuery,
+            onChange: (e) => setSearchQuery(e.target.value),
+            placeholder: "Search societies, descriptions…",
+          }}
+        >
+          {!loading && departmentOptions.length > 0 ? (
+            <PublicFilterChipGroup label="Browse by department">
+              <PublicFilterChip active={!selectedDepartment} onClick={() => setSelectedDepartment(null)}>
+                All departments
+              </PublicFilterChip>
+              {departmentOptions.map((name) => {
+                const active = selectedDepartment === name;
+                return (
+                  <PublicFilterChip key={name} active={active} onClick={() => setSelectedDepartment(active ? null : name)}>
+                    <span className="line-clamp-2">{name}</span>
+                  </PublicFilterChip>
+                );
+              })}
+            </PublicFilterChipGroup>
+          ) : null}
+        </PublicFilterCard>
 
         {loading ? (
           <div className="flex flex-col justify-center items-center h-80">
@@ -93,94 +123,91 @@ const AllSocieties = () => {
           </div>
         ) : (
           departments.map((dept, deptIndex) => (
-            <div key={dept} className="mb-16 last:mb-0">
+            <div key={dept} className="mb-12 last:mb-0">
               {/* Department Header */}
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: deptIndex * 0.1 }}
-                className="flex items-center gap-4 mb-7 pb-5"
-                style={{ borderBottom: `2px solid ${COLORS.border}` }}
+                className="mb-5 flex items-center gap-3 border-b pb-3"
+                style={{ borderColor: COLORS.border }}
               >
                 <div
-                  className="p-3 rounded-xl flex items-center justify-center shadow-sm"
-                  style={{
-                    backgroundColor: COLORS.dark,
-                    boxShadow: "0 6px 20px rgba(27, 77, 40, 0.25)",
-                  }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
+                  style={{ backgroundColor: COLORS.dark }}
                 >
-                  <BookOpen size={22} color="#fff" />
+                  <BookOpen size={18} color="#fff" strokeWidth={2} />
                 </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: COLORS.text }}>
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold tracking-tight sm:text-lg" style={{ color: COLORS.text }}>
                     {dept}
                   </h2>
-                  <p className="text-sm font-medium mt-1" style={{ color: COLORS.muted }}>
+                  <p className="mt-0.5 text-xs font-medium" style={{ color: COLORS.muted }}>
                     {groupedSocieties[dept].length}{" "}
                     {groupedSocieties[dept].length === 1 ? "society" : "societies"}
                   </p>
                 </div>
               </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-7">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
                 {groupedSocieties[dept].map((item) => {
                   const cardImg = uploadFileUrl(item.image) || FALLBACK_SOCIETY_IMG;
                   return (
                   <article
                     key={item._id}
-                    className="group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                    className="group flex flex-col overflow-hidden rounded-md border bg-white transition-[border-color,box-shadow] duration-200 hover:border-[#1d4ed8]/35 hover:shadow-md"
                     style={{
                       borderColor: COLORS.border,
-                      boxShadow: "0 4px 18px rgba(15, 23, 42, 0.06)",
+                      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
                     }}
                   >
-                    <div className="relative h-44 overflow-hidden">
+                    <div className="relative h-32 overflow-hidden sm:h-36">
                       <img
                         src={cardImg}
                         alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
                         loading="lazy"
                         onError={(e) => {
                           e.target.src = FALLBACK_SOCIETY_IMG;
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#111827]/65 via-[#111827]/15 to-transparent pointer-events-none" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f172a]/55 via-transparent to-transparent" />
 
-                      <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
+                      <div className="absolute left-2 top-2 right-2 flex justify-start">
                         <span
-                          className="rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B4D28] shadow-sm"
-                          style={{ backgroundColor: COLORS.gold }}
+                          className="rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                          style={{ backgroundColor: COLORS.gold, color: COLORS.dark }}
                         >
                           {item.joinPolicy || "Open"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="p-5 sm:p-6 flex flex-col grow">
-                      <h3 className="mb-2 text-lg font-black leading-snug transition-colors group-hover:text-[#B8860B]" style={{ color: COLORS.text }}>
+                    <div className="flex grow flex-col p-3.5 sm:p-4">
+                      <h3 className="mb-1.5 text-sm font-bold leading-snug tracking-tight sm:text-[15px]" style={{ color: COLORS.text }}>
                         {item.name}
                       </h3>
 
-                      <p className="text-sm leading-relaxed mb-5 line-clamp-3 flex-grow min-h-[3.75rem]" style={{ color: COLORS.muted }}>
+                      <p className="mb-3 line-clamp-2 flex-grow text-xs leading-relaxed" style={{ color: COLORS.muted }}>
                         {item.description ||
                           "Connect with members, join events, and grow skills alongside peers who share your interests."}
                       </p>
 
-                      <div className="mb-5 flex items-center gap-5 border-t pt-4" style={{ borderColor: COLORS.border }}>
+                      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-dashed pt-2.5" style={{ borderColor: COLORS.border }}>
                         <div
-                          className="flex items-center gap-1.5 text-sm font-semibold"
+                          className="flex items-center gap-1 text-[11px] font-semibold sm:text-xs"
                           style={{ color: COLORS.muted }}
                         >
-                          <Users size={15} style={{ color: COLORS.gold }} />
+                          <Users size={13} style={{ color: COLORS.gold }} strokeWidth={2} />
                           {item.members?.length || 0} members
                         </div>
                         <div
-                          className="flex items-center gap-1.5 text-sm font-semibold truncate"
+                          className="flex min-w-0 max-w-full items-center gap-1 truncate text-[11px] font-semibold sm:text-xs"
                           style={{ color: COLORS.muted }}
                           title={item.department || "General"}
                         >
-                          <Globe size={15} style={{ color: COLORS.gold }} className="shrink-0" />
+                          <Globe size={13} style={{ color: COLORS.gold }} className="shrink-0" strokeWidth={2} />
                           <span className="truncate">{item.department || "General"}</span>
                         </div>
                       </div>
@@ -188,16 +215,15 @@ const AllSocieties = () => {
                       <button
                         type="button"
                         onClick={() => navigate(`/society/${item._id}`)}
-                        className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+                        className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-sm border border-transparent py-2 text-xs font-semibold tracking-wide transition-colors duration-150 hover:bg-[#1d4ed8] active:bg-[#1e40af]"
                         style={{
                           backgroundColor: COLORS.dark,
                           color: "#fff",
-                          boxShadow: "0 8px 18px rgba(27, 77, 40, 0.2)",
                         }}
                       >
-                        <Eye size={18} strokeWidth={2.25} />
-                        View details now
-                        <ArrowRight size={16} className="opacity-90" />
+                        <Eye size={14} strokeWidth={2.25} />
+                        View
+                        <ArrowRight size={13} className="opacity-90" strokeWidth={2.5} />
                       </button>
                     </div>
                   </article>
@@ -208,20 +234,54 @@ const AllSocieties = () => {
           ))
         )}
 
-        {!loading && departments.length === 0 && (
-          <motion.div 
+        {!loading && societies.length > 0 && departments.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-2xl border bg-white py-16 text-center shadow-sm"
+            style={{ borderColor: COLORS.border }}
+          >
+            <div
+              className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ backgroundColor: "rgba(30, 64, 175, 0.08)" }}
+            >
+              <Search size={28} style={{ color: COLORS.muted }} />
+            </div>
+            <p className="text-base font-bold mb-2" style={{ color: COLORS.text }}>
+              No societies match your filters
+            </p>
+            <p className="mb-5 text-sm px-4" style={{ color: COLORS.muted }}>
+              Try another department or clear the search.
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-110"
+              style={{ backgroundColor: COLORS.dark }}
+            >
+              Clear filters
+            </button>
+          </motion.div>
+        )}
+
+        {!loading && societies.length === 0 && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-20"
           >
-            <div 
+            <div
               className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
               style={{ backgroundColor: "rgba(27, 77, 40, 0.08)" }}
             >
               <Search size={28} style={{ color: COLORS.muted }} />
             </div>
-            <p className="text-base font-bold mb-2" style={{ color: COLORS.text }}>No societies found</p>
-            <p className="text-sm" style={{ color: COLORS.muted }}>Try adjusting your search terms</p>
+            <p className="text-base font-bold mb-2" style={{ color: COLORS.text }}>
+              No societies yet
+            </p>
+            <p className="text-sm" style={{ color: COLORS.muted }}>
+              Check back later for new societies.
+            </p>
           </motion.div>
         )}
       </section>

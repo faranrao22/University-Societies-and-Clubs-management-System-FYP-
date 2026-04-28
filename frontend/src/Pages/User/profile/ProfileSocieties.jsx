@@ -3,9 +3,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../../context/AuthContext";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
+import toast from "react-hot-toast";
 import { 
   Users, Mail, Phone, MapPin, Calendar, ExternalLink, 
-  Loader2, AlertCircle, Crown, UserCheck, Info 
+  Loader2, AlertCircle, Crown, UserCheck, Info, LogOut
 } from "lucide-react";
 
 export default function ProfileSocieties() {
@@ -14,6 +15,7 @@ export default function ProfileSocieties() {
   const [memberSocieties, setMemberSocieties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leavingSocietyId, setLeavingSocietyId] = useState(null);
 
   useEffect(() => {
     if (!user?._id) {
@@ -59,6 +61,33 @@ export default function ProfileSocieties() {
       r => r.user?._id === user._id || r.user === user._id
     );
     return role?.name || "Member";
+  };
+
+  const handleLeaveSociety = async (society) => {
+    if (!society?._id) return;
+    if (!window.confirm(`Leave "${society.name}"?`)) return;
+
+    try {
+      setLeavingSocietyId(society._id);
+      const token = localStorage.getItem("token");
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.delete(`${API_BASE_URL}/societies/${society._id}/leave`, {
+        withCredentials: true,
+        headers: authHeader,
+      });
+
+      if (!res.data?.success) {
+        toast.error(res.data?.message || "Failed to leave society");
+        return;
+      }
+
+      setMemberSocieties((prev) => prev.filter((s) => s._id !== society._id));
+      toast.success("You left the society");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to leave society");
+    } finally {
+      setLeavingSocietyId(null);
+    }
   };
 
   // ✅ Helper: Format date
@@ -118,6 +147,7 @@ export default function ProfileSocieties() {
   const SocietyDetailCard = ({ society }) => {
     const role = getUserRole(society);
     const isLeader = ["President", "Vice President", "Secretary", "Treasurer"].includes(role);
+    const isLeaving = leavingSocietyId === society._id;
     
     // Get all roles with assigned users
     const assignedRoles = society.roles?.filter(r => r.user) || [];
@@ -255,15 +285,35 @@ export default function ProfileSocieties() {
 
         {/* Footer Actions */}
         <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500">
             {society.department && <span>Dept: {society.department}</span>}
-          </span>
-          <a 
-            href={`/societies/${society._id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#1e3a8a] bg-[#eff6ff] rounded-xl border border-[rgba(30,64,175,0.14)] hover:brightness-95 transition"
-          >
-            View Full Details <ExternalLink size={14} />
-          </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleLeaveSociety(society)}
+              disabled={isLeaving}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-xl border border-red-200 hover:bg-red-100 transition disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLeaving ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Leaving...
+                </>
+              ) : (
+                <>
+                  <LogOut size={14} />
+                  Leave Society
+                </>
+              )}
+            </button>
+            <a 
+              href={`/societies/${society._id}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#1e3a8a] bg-[#eff6ff] rounded-xl border border-[rgba(30,64,175,0.14)] hover:brightness-95 transition"
+            >
+              View Full Details <ExternalLink size={14} />
+            </a>
+          </div>
         </div>
       </div>
     );

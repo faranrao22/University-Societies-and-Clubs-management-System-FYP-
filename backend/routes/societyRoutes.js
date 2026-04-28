@@ -1,5 +1,5 @@
 let express = require("express");
-let {createSociety,getAllSocieties, getMySocieties, getSocietiesByid, updateSociety,getMemberSocieties, deleteSociety, getSocietyWithMembership}=require("../controllers/societyController")
+let {createSociety,getAllSocieties, getMySocieties, getSocietiesByid, updateSociety,getMemberSocieties, deleteSociety, getSocietyWithMembership, withdrawSocietyApplication, leaveSociety, downloadSocietyPdfManager, removeSocietyMember, assignSocietyRoleMember}=require("../controllers/societyController")
 const societyPostController = require("../controllers/societyPostController");
 let verifyToken=require("../middleware/authMiddleware")
 const upload = require("../middleware/uploadMiddleware");
@@ -18,7 +18,12 @@ router.get("/posts/managed", verifyToken, societyPostController.listManagedPosts
 router.put("/posts/:postId", verifyToken, upload.single("image"), societyPostController.updateSocietyPost);
 router.delete("/posts/:postId", verifyToken, societyPostController.deleteSocietyPostManager);
 router.post("/posts", verifyToken, upload.single("image"), societyPostController.createSocietyPost);
+router.delete("/:id/withdraw-application", verifyToken, withdrawSocietyApplication);
+router.delete("/:id/leave", verifyToken, leaveSociety);
+router.delete("/:id/members/:memberId", verifyToken, removeSocietyMember);
+router.patch("/:id/roles/:roleId", verifyToken, assignSocietyRoleMember);
 router.get("/:id/membership", verifyToken, getSocietyWithMembership);
+router.get("/:id/pdf", verifyToken, downloadSocietyPdfManager);
 router.get("/:id",getSocietiesByid )
 
 router.put("/update/:id",verifyToken,upload.single("image"),updateSociety)

@@ -13,6 +13,7 @@ const signup = async (req, res) => {
       email,
       password,
       rollNo,
+      cnicLast4,
       Department, // Must match frontend key 'Department'
       semester,
       sessionStart,
@@ -25,6 +26,12 @@ const signup = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Fullname, email, password and department are required",
+      });
+    }
+    if (String(password).length < 8 || String(password).length > 64) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be between 8 and 64 characters",
       });
     }
 
@@ -54,10 +61,17 @@ const signup = async (req, res) => {
     if (userRole === "user") {
       const start = (sessionStart || "").trim();
       const end = (sessionEnd || "").trim();
-      if (!rollNo || !semester || !start || !end) {
+      if (!rollNo || !semester || !start || !end || !cnicLast4) {
         return res.status(400).json({
           success: false,
-          message: "Roll number, semester, session start and session end are required for students",
+          message: "Roll number, CNIC last 4 digits, semester, session start and session end are required for students",
+        });
+      }
+      const normalizedCnicLast4 = String(cnicLast4).trim();
+      if (!/^\d{4}$/.test(normalizedCnicLast4)) {
+        return res.status(400).json({
+          success: false,
+          message: "CNIC last 4 digits must be exactly 4 numbers",
         });
       }
       if (end < start) {
@@ -75,6 +89,7 @@ const signup = async (req, res) => {
       }
 
       userData.rollNo = rollNo;
+      userData.cnicLast4 = normalizedCnicLast4;
       userData.semester = semester;
       userData.sessionStart = start;
       userData.sessionEnd = end;
@@ -102,6 +117,62 @@ const signup = async (req, res) => {
 
   } catch (error) {
     console.error("SIGNUP_ERROR:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email, rollNo, cnicLast4, newPassword } = req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedRollNo = String(rollNo || "").trim();
+    const normalizedCnicLast4 = String(cnicLast4 || "").trim();
+    const normalizedNewPassword = String(newPassword || "");
+
+    if (!normalizedEmail || !normalizedRollNo || !normalizedCnicLast4 || !normalizedNewPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, roll number, CNIC last 4 digits and new password are required",
+      });
+    }
+
+    if (!/^\d{4}$/.test(normalizedCnicLast4)) {
+      return res.status(400).json({
+        success: false,
+        message: "CNIC last 4 digits must be exactly 4 numbers",
+      });
+    }
+
+    if (normalizedNewPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 8 characters long",
+      });
+    }
+
+    const user = await users.findOne({
+      email: normalizedEmail,
+      rollNo: normalizedRollNo,
+      role: "user",
+    });
+
+    if (!user || !user.cnicLast4 || user.cnicLast4 !== normalizedCnicLast4) {
+      return res.status(400).json({
+        success: false,
+        message: "Provided details do not match our records",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(normalizedNewPassword, salt);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successful. Please login with your new password.",
+    });
+  } catch (error) {
+    console.error("FORGOT_PASSWORD_ERROR:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -338,6 +409,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, getUser, updateMyProfile, getAllUsers, deleteUser, updateUser };
+module.exports = { signup, login, logout, forgotPassword, getUser, updateMyProfile, getAllUsers, deleteUser, updateUser };
 
 

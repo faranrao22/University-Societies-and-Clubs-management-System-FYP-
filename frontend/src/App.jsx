@@ -55,6 +55,7 @@ import ScheduleVoting from './Pages/Manager/Election/ScheduleVoting';
 import VotePage from './Pages/User/Election/Vote';
 import ApplyPage from './Pages/User/Election/ApplyPage';
 import SignupForm from './Pages/Auth/SignUp';
+import ForgotPassword from './Pages/Auth/ForgotPassword';
 import JoinSocietyFormPage from './Pages/User/Societies/JoinSocietyForm';
 import SocietyView from './Pages/User/Societies/SocietyView';
 import SocietyPostsFeed from './Pages/User/Societies/SocietyPostsFeed';
@@ -103,6 +104,7 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path='/signup' element={<SignupForm />} />
           <Route path="/profile" element={<ProfileEntry />} />
           <Route path='/contact' element={<Contact />} />

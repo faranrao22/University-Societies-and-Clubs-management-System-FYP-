@@ -12,13 +12,10 @@ import {
   Shield,
 } from "lucide-react";
 import API_BASE_URL from "../../../config/api.config";
+import PageLoader from "../../../Components/PageLoader";
 
 /* ---------------- Skeleton ---------------- */
-const Skeleton = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-    <div className="animate-pulse text-slate-400">Loading...</div>
-  </div>
-);
+const Skeleton = () => <PageLoader fullScreen />;
 
 /* ---------------- Success Modal ---------------- */
 const SuccessModal = ({ title, onBack }) => (

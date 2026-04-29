@@ -4,6 +4,17 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import API_BASE_URL from "../../../config/api.config";
 
+const COLORS = {
+  primary: "#1e3a8a",
+  accent: "#38bdf8",
+  bg: "#e2e8f0",
+  surface: "#FFFFFF",
+  text: "#111827",
+  textMuted: "#4B5563",
+  border: "rgba(30, 64, 175, 0.2)",
+  borderLight: "rgba(30, 64, 175, 0.1)",
+};
+
 export default function VotePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -69,21 +80,54 @@ export default function VotePage() {
   };
 
   const roles = Object.keys(candidatesByRole || {});
+  const selectedCount = Object.keys(selectedVotes).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen py-10 px-4" style={{ backgroundColor: COLORS.bg }}>
       <div className="max-w-6xl mx-auto">
-
         {/* HEADER */}
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          {election?.title || "Election Voting"}
-        </h1>
+        <header className="mb-8">
+          <div
+            className="mb-4 inline-flex items-center gap-2 rounded-md px-3 py-1.5"
+            style={{ backgroundColor: "rgba(29, 78, 216, 0.12)" }}
+          >
+            <span
+              className="text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: COLORS.primary }}
+            >
+              Voting Portal
+            </span>
+          </div>
+          <h1 className="mb-2 text-3xl font-bold" style={{ color: COLORS.text }}>
+            {election?.title || "Election Voting"}
+          </h1>
+          <p className="text-sm" style={{ color: COLORS.textMuted }}>
+            Select one candidate for each role and submit your vote.
+          </p>
+        </header>
 
         {/* ROLES */}
         <div className="space-y-10">
+          {!loading && roles.length === 0 ? (
+            <div
+              className="rounded-xl border p-8 text-center"
+              style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+            >
+              <h3 className="mb-2 text-base font-semibold" style={{ color: COLORS.text }}>
+                No candidates available right now
+              </h3>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>
+                Please check back later.
+              </p>
+            </div>
+          ) : null}
+
           {roles.map((role) => (
             <div key={role}>
-              <h2 className="text-lg font-semibold mb-4 border-b pb-2">
+              <h2
+                className="text-lg font-semibold mb-4 border-b pb-2"
+                style={{ borderBottomColor: COLORS.borderLight, color: COLORS.text }}
+              >
                 {role}
               </h2>
 
@@ -101,11 +145,15 @@ export default function VotePage() {
                           [role]: c.candidateId,
                         }))
                       }
-                      className={`cursor-pointer rounded-xl border bg-white hover:shadow-md transition ${
+                      className={`cursor-pointer rounded-xl border hover:shadow-md transition ${
                         isSelected
-                          ? "border-indigo-500 ring-2 ring-indigo-100"
-                          : "border-gray-200"
+                          ? "ring-2 ring-blue-100"
+                          : ""
                       }`}
+                      style={{
+                        backgroundColor: COLORS.surface,
+                        borderColor: isSelected ? COLORS.primary : COLORS.border,
+                      }}
                     >
                       {/* IMAGE */}
                       <div className="h-44 w-full overflow-hidden rounded-t-xl bg-gray-100">
@@ -118,13 +166,13 @@ export default function VotePage() {
 
                       {/* INFO */}
                       <div className="p-4">
-                        <h3 className="font-semibold">{c.name}</h3>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="font-semibold" style={{ color: COLORS.text }}>{c.name}</h3>
+                        <p className="text-sm" style={{ color: COLORS.textMuted }}>
                           {c.position || role}
                         </p>
 
                         {isSelected && (
-                          <p className="text-sm text-indigo-600 mt-2">
+                          <p className="text-sm mt-2" style={{ color: COLORS.primary }}>
                             ✔ Selected
                           </p>
                         )}
@@ -138,13 +186,21 @@ export default function VotePage() {
         </div>
 
         {/* SUBMIT */}
-        <button
-          onClick={handleVoteSubmit}
-          disabled={submitting}
-          className="w-full mt-10 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700"
-        >
-          {submitting ? "Submitting Vote..." : "Submit Vote"}
-        </button>
+        <div className="mt-8 rounded-xl border px-4 py-4" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium" style={{ color: COLORS.textMuted }}>
+              {selectedCount} role{selectedCount === 1 ? "" : "s"} selected
+            </p>
+            <button
+              onClick={handleVoteSubmit}
+              disabled={submitting}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: COLORS.primary }}
+            >
+              {submitting ? "Submitting..." : "Submit Vote"}
+            </button>
+          </div>
+        </div>
 
       </div>
 

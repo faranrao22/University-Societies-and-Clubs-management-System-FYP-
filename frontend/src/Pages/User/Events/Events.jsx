@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import axios from "axios";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Users, Calendar, X, Loader2, ArrowRight, Eye } from "lucide-react";
+import { MapPin, Users, Calendar, X, ArrowRight, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import PublicSearchInput from "../../../Components/PublicSearchInput";
 import PublicFilterCard, { PublicFilterChip, PublicFilterChipGroup } from "../../../Components/PublicFilterCard";
 import useDebouncedValue from "../../../hooks/useDebouncedValue";
+import PageLoader from "../../../Components/PageLoader";
 
 const COLORS = {
   dark: "#1e3a8a",
@@ -183,12 +184,7 @@ function AllEvents() {
 
       <div className="mx-auto max-w-6xl px-6 pb-16">
         {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="animate-spin" size={40} style={{ color: COLORS.gold }} />
-            <p className="mt-3 text-sm" style={{ color: COLORS.muted }}>
-              Loading events…
-            </p>
-          </div>
+          <PageLoader className="py-20" />
         )}
 
         {!loading && events.length === 0 && (

@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   Shield,
-  Loader2,
   UserCircle,
   Calendar,
   Newspaper,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import SocietyPostCard from "./SocietyPostCard";
+import PageLoader from "../../../Components/PageLoader";
 
 const COLORS = {
   dark: "#1e3a8a",
@@ -125,17 +125,7 @@ export default function SocietyView() {
   }, [events]);
 
   if (loading) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3"
-        style={{ backgroundColor: COLORS.cream }}
-      >
-        <Loader2 className="animate-spin" size={40} style={{ color: COLORS.gold }} />
-        <p className="text-sm font-medium" style={{ color: COLORS.muted }}>
-          Loading society…
-        </p>
-      </div>
-    );
+    return <PageLoader fullScreen />;
   }
 
   if (!society || societyError) {

@@ -1,6 +1,6 @@
 let express = require("express")
 let router = express.Router()
-let { signup, login, logout, getUser, updateMyProfile, getAllUsers, deleteUser, updateUser } = require("../controllers/authController")
+let { signup, login, logout, forgotPassword, getUser, updateMyProfile, getAllUsers, deleteUser, updateUser } = require("../controllers/authController")
 let upload = require("../middleware/uploadMiddleware"); // Multer middleware for file uploads
 const verifyToken = require("../middleware/authMiddleware");
 const requireAdmin = require("../middleware/adminMiddleware");
@@ -15,6 +15,7 @@ router.post(
     signup)
 router.post("/login", login);
 router.post("/logout", logout);
+router.post("/forgot-password", forgotPassword);
 router.get("/me", getUser);
 router.patch("/me", verifyToken, updateMyProfile);
 router.get("/users", verifyToken, requireAdmin, getAllUsers)

@@ -4,7 +4,6 @@ import {
   Users,
   ArrowRight,
   Globe,
-  Loader2,
   BookOpen,
   Eye,
   Search,
@@ -14,6 +13,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import PublicFilterCard, { PublicFilterChip, PublicFilterChipGroup } from "../../../Components/PublicFilterCard";
+import PageLoader from "../../../Components/PageLoader";
 
 const FALLBACK_SOCIETY_IMG =
   "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800";
@@ -117,10 +117,7 @@ const AllSocieties = () => {
         </PublicFilterCard>
 
         {loading ? (
-          <div className="flex flex-col justify-center items-center h-80">
-            <Loader2 className="animate-spin mb-4" size={40} style={{ color: COLORS.gold }} />
-            <p className="text-sm font-medium" style={{ color: COLORS.muted }}>Loading societies...</p>
-          </div>
+          <PageLoader className="h-80 py-0" />
         ) : (
           departments.map((dept, deptIndex) => (
             <div key={dept} className="mb-12 last:mb-0">

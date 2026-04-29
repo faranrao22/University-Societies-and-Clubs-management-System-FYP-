@@ -44,7 +44,13 @@ function SocietiesPreview() {
     queryFn: async () => {
       const res = await fetch(`${API_BASE_URL}/societies/Allsocieties`, { credentials: "include" });
       const data = await res.json();
-      return data.data?.slice(0, 3) || [];
+      const list = Array.isArray(data.data) ? data.data : [];
+      const latestFirst = [...list].sort((a, b) => {
+        const aTime = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+        return bTime - aTime;
+      });
+      return latestFirst.slice(0, 3);
     },
     staleTime: 10 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
@@ -205,7 +211,7 @@ function SocietiesPreview() {
                     </div>
 
                     <Link
-                      to={`/society/${item._id}`}
+                      to="/community"
                       className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-sm border border-transparent py-2 text-xs font-semibold tracking-wide transition-colors duration-150 hover:bg-[#1d4ed8] active:bg-[#1e40af]"
                       style={{ backgroundColor: COLORS.dark, color: "#fff" }}
                     >

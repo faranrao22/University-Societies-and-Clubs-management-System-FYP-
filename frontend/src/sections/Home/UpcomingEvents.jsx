@@ -1,10 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Calendar, MapPin, ArrowRight, Sparkles, Loader2, Eye } from "lucide-react";
+import { Users, Calendar, MapPin, ArrowRight, Sparkles, Eye } from "lucide-react";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL, { uploadFileUrl } from "../../config/api.config";
+import PageLoader from "../../Components/PageLoader";
 
 const COLORS = {
   dark: "#1e3a8a",
@@ -39,7 +40,12 @@ export default function UpcomingEvents() {
         params: { page: 1, limit: 6 },
       });
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
-      return list.slice(0, 3);
+      const latestFirst = [...list].sort((a, b) => {
+        const aTime = new Date(a?.createdAt || a?.updatedAt || a?.startDateTime || 0).getTime();
+        const bTime = new Date(b?.createdAt || b?.updatedAt || b?.startDateTime || 0).getTime();
+        return bTime - aTime;
+      });
+      return latestFirst.slice(0, 3);
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
@@ -76,9 +82,7 @@ export default function UpcomingEvents() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin" style={{ color: COLORS.gold }} />
-          </div>
+          <PageLoader />
         ) : events.length === 0 ? (
           <div
             className="rounded-2xl border border-dashed p-10 text-center text-sm"
@@ -96,7 +100,7 @@ export default function UpcomingEvents() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08 }}
               >
-                <Link to={`/eventdetails/${event._id}`} className="group block h-full">
+                <Link to="/events" className="group block h-full">
                   <article
                     className="flex h-full flex-col overflow-hidden rounded-md border bg-white transition-[border-color,box-shadow] duration-200 hover:border-[#1d4ed8]/35 hover:shadow-md"
                     style={{

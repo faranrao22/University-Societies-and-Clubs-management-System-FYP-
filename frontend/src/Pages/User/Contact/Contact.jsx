@@ -63,19 +63,19 @@ const Contact = () => {
     {
       icon: <Mail size={20} />,
       title: "Email",
-      value: "hello@uscms.edu",
+      value: "admin@uscms.com",
       desc: "We respond within 24 hours on business days."
     },
     {
       icon: <Phone size={20} />,
       title: "Phone",
-      value: "+1 (555) 000-1234",
+      value: "03019334302",
       desc: "Monday to Friday, 9:00 AM – 5:00 PM."
     },
     {
       icon: <MapPin size={20} />,
       title: "Office",
-      value: "Student Union, Plaza 4",
+      value: "Gulgash multan",
       desc: "Visit us during regular campus hours."
     }
   ];

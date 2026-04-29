@@ -52,6 +52,8 @@ const FormField = ({ label, icon: Icon, name, value, onChange, type = "text", pl
         placeholder={type === "date" ? undefined : placeholder}
         min={min}
         max={max}
+        minLength={name === "password" ? 8 : undefined}
+        maxLength={name === "password" ? 64 : undefined}
         required={required}
         autoComplete="off"
         className={`w-full h-11 pl-10 rounded-lg text-sm outline-none transition-colors ${type === "date" ? "pr-3" : "pr-4"}`}
@@ -79,6 +81,7 @@ function SignupForm() {
     email: "",
     password: "",
     rollNo: "",
+    cnicLast4: "",
     Department: "", 
     semester: "",
     sessionStart: "",
@@ -237,7 +240,7 @@ function SignupForm() {
                   onChange={handleChange} 
                   required 
                   icon={FaLock} 
-                  placeholder="••••••••" 
+                  placeholder="8 to 64 characters" 
                 />
               </div>
             )}
@@ -255,6 +258,17 @@ function SignupForm() {
                     icon={FaIdCard} 
                     placeholder="CS-123" 
                   />
+                  <FormField
+                    label="CNIC Last 4"
+                    name="cnicLast4"
+                    value={formData.cnicLast4}
+                    onChange={handleChange}
+                    required
+                    icon={FaIdCard}
+                    placeholder="1234"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <FormField 
                     label="Semester" 
                     name="semester" 

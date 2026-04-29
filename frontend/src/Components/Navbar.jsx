@@ -9,6 +9,8 @@ function Navbar() {
 
   const userRole = (user?.role || "user").toLowerCase();
   const showStudentProfileNav = Boolean(user) && userRole === "user";
+  const showDashboardNav = Boolean(user) && (userRole === "admin" || userRole === "manager");
+  const dashboardPath = userRole === "admin" ? "/admin/dashboard" : "/manager/dashboard";
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,6 +138,11 @@ function Navbar() {
                         <p className="text-xs opacity-80">{user.email}</p>
                       </div>
                       <div className="py-1">
+                        {showDashboardNav && (
+                          <Link to={dashboardPath} onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm hover:bg-[#eef2f7]">
+                            Dashboard
+                          </Link>
+                        )}
                         {showStudentProfileNav && (
                           <Link to="/profile" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm hover:bg-[#eef2f7]">
                             Profile
@@ -245,6 +252,15 @@ function Navbar() {
                     </Link>
                   ))}
                 </div>
+                {showDashboardNav && (
+                  <Link
+                    to={dashboardPath}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="mt-6 rounded-lg border-t border-gray-100 px-3 pt-6 text-[15px] font-medium text-[#4B5563] transition-colors hover:bg-[#eef2f7] hover:text-[#1d4ed8]"
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 {showStudentProfileNav && (
                   <Link
                     to="/profile"

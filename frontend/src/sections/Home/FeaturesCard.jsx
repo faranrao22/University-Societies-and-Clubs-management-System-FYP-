@@ -24,33 +24,33 @@ const FeaturesSection = () => {
   const features = [
     {
       icon: <Users size={24} />,
-      title: "Vibrant Societies",
-      description: "Browse curated student organizations. Filter by interest, join recruitment drives, and manage your memberships in one place.",
+      title: "Society Discovery & Join Requests",
+      description: "Browse societies, view profiles, and send join requests online.",
     },
     {
       icon: <Calendar size={24} />,
-      title: "Smart Event Tracking",
-      description: "Sync campus workshops, seminars, and fests directly to your personal calendar with automated RSVP reminders.",
+      title: "Event Management Workflow",
+      description: "Create events, apply as volunteers, and track status in profile.",
     },
     {
       icon: <Trophy size={24} />,
-      title: "Election Portal",
-      description: "Transparent digital voting and candidate profiles. Run for office or vote for your next student representatives securely.",
+      title: "Election Module",
+      description: "Handle applications, voting, and results in one election flow.",
     },
     {
       icon: <ShieldCheck size={24} />,
-      title: "Verified Certifications",
-      description: "Earn digital certificates for society participation and event attendance, verifiable by recruiters via QR codes.",
+      title: "Role-Based Access Control",
+      description: "User, manager, and admin roles have separate permissions.",
     },
     {
       icon: <Zap size={24} />,
-      title: "Instant Notifications",
-      description: "Get real-time updates on venue changes, emergency announcements, and last-minute society meeting calls.",
+      title: "Real-Time Notification Center",
+      description: "Get in-app updates for requests, approvals, and elections.",
     },
     {
       icon: <BarChart3 size={24} />,
-      title: "Resource Analytics",
-      description: "Society leads can track attendance, budget utilization, and engagement metrics through a dedicated dashboard.",
+      title: "Dashboards & Profile Tracking",
+      description: "Dashboards and profiles keep all activity in one place.",
     },
   ];
 
@@ -62,19 +62,19 @@ const FeaturesSection = () => {
           <motion.span 
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="inline-block font-bold tracking-widest uppercase text-xs"
+            className="inline-block font-bold tracking-[0.22em] uppercase text-xs"
             style={{ color: COLORS.brightGreen }}
           >
-            Efficiency Redefined
+            Core Modules
           </motion.span>
           <motion.h2 
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mb-5 mt-3 text-3xl font-black tracking-tight md:text-4xl"
+            className="mb-5 mt-3 text-3xl font-black tracking-[0.01em] md:text-4xl"
             style={{ color: COLORS.darkGreen }}
           >
-            Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(90deg, ${COLORS.brightGreen}, ${COLORS.gold})` }}>thrive on campus.</span>
+            Key features of <span className="text-transparent bg-clip-text bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(90deg, ${COLORS.brightGreen}, ${COLORS.gold})` }}>USCMS.</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 10 }}
@@ -83,8 +83,7 @@ const FeaturesSection = () => {
             className="text-base leading-relaxed md:text-lg"
             style={{ color: COLORS.textSecondary }}
           >
-            USCMS provides the digital infrastructure to bridge the gap between 
-            students, societies, and university administration.
+            Built for students, society managers, and university admins.
           </motion.p>
         </div>
 
@@ -118,7 +117,7 @@ const FeaturesSection = () => {
 
               {/* Text Content */}
               <h3 
-                className="text-lg font-bold mb-2 tracking-tight transition-colors duration-150"
+                className="text-lg font-bold mb-2 tracking-[0.01em] transition-colors duration-150"
                 style={{ color: COLORS.textPrimary }}
               >
                 {feature.title}

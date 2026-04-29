@@ -1,11 +1,12 @@
 import React, { useDeferredValue, useMemo, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { Calendar, Loader2, Newspaper, X } from "lucide-react";
+import { Calendar, Newspaper, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL, { uploadFileUrl } from "../../../config/api.config";
 import SocietyPostCard from "./SocietyPostCard";
 import PublicFilterCard, { PublicFilterChip, PublicFilterChipGroup } from "../../../Components/PublicFilterCard";
+import PageLoader from "../../../Components/PageLoader";
 
 const COLORS = {
   dark: "#1e3a8a",
@@ -135,12 +136,7 @@ export default function SocietyPostsFeed() {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="animate-spin" size={36} style={{ color: COLORS.gold }} />
-            <p className="mt-3 text-sm" style={{ color: COLORS.muted }}>
-              Loading…
-            </p>
-          </div>
+          <PageLoader className="py-20" />
         ) : posts.length === 0 ? (
           <p className="text-center text-sm" style={{ color: COLORS.muted }}>
             No posts published yet.

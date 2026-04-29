@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
   rollNo: {
     type: String, // only for users
   },
+  cnicLast4: {
+    type: String, // only for users (used in forgot-password verification)
+    trim: true,
+  },
   Department: {
     type: String, // users & managers
   },

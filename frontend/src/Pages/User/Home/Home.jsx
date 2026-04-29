@@ -12,9 +12,11 @@ function Home() {
     <div>
         <HeroSection/>
         <FeaturesSection/>
+      
         <HowItWorks />
-        <UpcomingEvents/>
         <SocietyPostsPreview />
+     
+        <UpcomingEvents/>
         <Community/> 
       
     </div>

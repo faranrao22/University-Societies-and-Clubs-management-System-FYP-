@@ -2,9 +2,10 @@ import React from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, Newspaper, ArrowRight, Calendar } from "lucide-react";
+import { Newspaper, ArrowRight, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import API_BASE_URL from "../../config/api.config";
+import PageLoader from "../../Components/PageLoader";
 
 const COLORS = {
   dark: "#1e3a8a",
@@ -51,9 +52,7 @@ export default function SocietyPostsPreview() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-14">
-            <Loader2 className="animate-spin" style={{ color: COLORS.gold }} />
-          </div>
+          <PageLoader />
         ) : posts.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-white p-8 text-center text-sm" style={{ borderColor: COLORS.border, color: COLORS.muted }}>
             No posts available yet.

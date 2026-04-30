@@ -10,13 +10,15 @@ import {
   BadgeCheck,
   X,
   Newspaper,
+  Home,
 } from "lucide-react";
 import { uploadFileUrl } from "../../../config/api.config";
 
 const NAV_ITEMS = [
+  { id: "Home", label: "Home", icon: Home, path: "/" },
   { id: "details", label: "My Details", icon: User, path: "/student/profile" },
   { id: "volunteers", label: "My Volunteer Events", icon: ClipboardList, path: "/student/profile/volunteers" },
-  { id: "volunteer-status", label: "Volunteer Applications", icon: BadgeCheck, path: "/student/profile/volunteer-status" },
+  { id: "volunteer-status", label: "Volunteer Card", icon: BadgeCheck, path: "/student/profile/volunteer-status" },
   { id: "societies", label: "My Societies", icon: Users, path: "/student/profile/societies" },
   { id: "society-posts", label: "Society updates", icon: Newspaper, path: "/student/profile/society-posts" },
   { id: "applications", label: "Societies Application", icon: Users, path: "/student/profile/applications" },
